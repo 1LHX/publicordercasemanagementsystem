@@ -1,0 +1,34 @@
+package com.example.publicordercasemanagementsystem.controller;
+
+import com.example.publicordercasemanagementsystem.dto.ApiResponse;
+import com.example.publicordercasemanagementsystem.dto.ChatCompletionRequest;
+import com.example.publicordercasemanagementsystem.dto.ChatCompletionResponse;
+import com.example.publicordercasemanagementsystem.dto.PromptRequest;
+import com.example.publicordercasemanagementsystem.service.DashScopeService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/dashscope")
+public class DashScopeController {
+
+    private final DashScopeService dashScopeService;
+
+    public DashScopeController(DashScopeService dashScopeService) {
+        this.dashScopeService = dashScopeService;
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<ApiResponse<ChatCompletionResponse>> chat(@Valid @RequestBody ChatCompletionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(dashScopeService.chat(request)));
+    }
+
+    @PostMapping("/prompt")
+    public ResponseEntity<ApiResponse<ChatCompletionResponse>> chatFromPrompt(@Valid @RequestBody PromptRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(dashScopeService.chat(request)));
+    }
+}
