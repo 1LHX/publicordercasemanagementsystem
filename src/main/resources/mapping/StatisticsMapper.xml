@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.StatisticsMapper">
+
+    <sql id="CaseTimeRangeWhere">
+        <if test="startTime != null">
+            and c.created_at &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and c.created_at &lt;= #{endTime}
+        </if>
+    </sql>
+
+    <select id="countCasesTotal" resultType="long">
+        select count(1)
+        from cases c
+        <where>
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+    </select>
+
+    <select id="countCasesByStatus" resultType="com.example.publicordercasemanagementsystem.dto.StatisticsCountItem">
+        select c.status as `key`, c.status as `name`, count(1) as `count`
+        from cases c
+        <where>
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+        group by c.status
+        order by count(1) desc
+    </select>
+
+    <select id="countCasesByType" resultType="com.example.publicordercasemanagementsystem.dto.StatisticsCountItem">
+        select c.type_code as `key`, coalesce(dct.name, c.type_code) as `name`, count(1) as `count`
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        <where>
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+        group by c.type_code, dct.name
+        order by count(1) desc
+    </select>
+
+    <select id="countCasesByPeriod" resultType="com.example.publicordercasemanagementsystem.dto.TimeCountItem">
+        select date_format(c.created_at, #{periodFormat}) as period, count(1) as `count`
+        from cases c
+        <where>
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+        group by date_format(c.created_at, #{periodFormat})
+        order by period asc
+    </select>
+
+    <select id="findRegionHotspots" resultType="com.example.publicordercasemanagementsystem.dto.RegionHotspotItem">
+        select coalesce(nullif(c.incident_location, ''), dep.name, 'UNKNOWN') as region,
+               count(1) as case_count
+        from cases c
+        left join departments dep on dep.id = c.department_id
+        <where>
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+        group by coalesce(nullif(c.incident_location, ''), dep.name, 'UNKNOWN')
+        order by case_count desc
+        limit #{topN}
+    </select>
+
+    <select id="findOfficerEfficiency" resultType="com.example.publicordercasemanagementsystem.dto.OfficerEfficiencyItem">
+        select c.handling_officer_id as officer_id,
+               u.name as officer_name,
+               count(1) as assigned_count,
+               sum(case when c.status in ('DECIDED', 'EXECUTED', 'ARCHIVED') then 1 else 0 end) as completed_count,
+               sum(case when c.is_overdue = 1 then 1 else 0 end) as overdue_count,
+               round(sum(case when c.status in ('DECIDED', 'EXECUTED', 'ARCHIVED') then 1 else 0 end) * 100.0 / count(1), 2) as completion_rate
+        from cases c
+        left join users u on u.id = c.handling_officer_id
+        <where>
+            c.handling_officer_id is not null
+            <include refid="CaseTimeRangeWhere" />
+        </where>
+        group by c.handling_officer_id, u.name
+        order by completion_rate desc, assigned_count desc
+        limit #{topN}
+    </select>
+
+    <select id="findReviewPassRate" resultType="com.example.publicordercasemanagementsystem.dto.ReviewPassRateItem">
+        select date_format(clr.reviewed_at, '%Y-%m') as period,
+               count(1) as total_reviewed,
+               sum(case when clr.review_status = 'APPROVED' then 1 else 0 end) as approved_count,
+               round(sum(case when clr.review_status = 'APPROVED' then 1 else 0 end) * 100.0 / count(1), 2) as pass_rate
+        from case_legal_reviews clr
+        <where>
+            <if test="startTime != null">
+                and clr.reviewed_at &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and clr.reviewed_at &lt;= #{endTime}
+            </if>
+        </where>
+        group by date_format(clr.reviewed_at, '%Y-%m')
+        order by period asc
+    </select>
+
+</mapper>
+
