@@ -53,6 +53,10 @@ Version: v0.1 (inventory + implementation roadmap)
 | Dictionary | GET | `/api/dictionaries/case-types` | List case type dictionary | JWT | Implemented |
 | Deadline | GET | `/api/cases/deadline-warnings` | Cases nearing deadline | JWT | Implemented |
 | Deadline | GET | `/api/cases/overdue` | Overdue cases | JWT | Implemented |
+| Statistics | GET | `/api/statistics/cases-overview` | Case count by status/type/time | JWT | Implemented |
+| Statistics | GET | `/api/statistics/region-hotspots` | High-frequency region report | JWT | Implemented |
+| Statistics | GET | `/api/statistics/officer-efficiency` | Officer efficiency ranking | JWT | Implemented |
+| Statistics | GET | `/api/statistics/review-pass-rate` | Legal review pass-rate trend | JWT | Implemented |
 
 ---
 
@@ -132,10 +136,10 @@ Recommended baseline status machine:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Statistics | GET | `/api/statistics/cases-overview` | Case count by status/type/time | JWT | P1 | Planned |
-| Statistics | GET | `/api/statistics/region-hotspots` | High-frequency region report | JWT | P2 | Planned |
-| Statistics | GET | `/api/statistics/officer-efficiency` | Officer efficiency ranking | JWT | P2 | Planned |
-| Statistics | GET | `/api/statistics/review-pass-rate` | Legal review pass-rate trend | JWT | P2 | Planned |
+| Statistics | GET | `/api/statistics/cases-overview` | Case count by status/type/time | JWT | P1 | Implemented |
+| Statistics | GET | `/api/statistics/region-hotspots` | High-frequency region report | JWT | P2 | Implemented |
+| Statistics | GET | `/api/statistics/officer-efficiency` | Officer efficiency ranking | JWT | P2 | Implemented |
+| Statistics | GET | `/api/statistics/review-pass-rate` | Legal review pass-rate trend | JWT | P2 | Implemented |
 
 ### 4.4 Documents and Templates
 
