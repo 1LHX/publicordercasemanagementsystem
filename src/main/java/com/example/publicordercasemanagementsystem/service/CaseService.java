@@ -7,7 +7,12 @@ import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CreateEvidenceRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewApproveRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewRejectRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewSubmitRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
+import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
+import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +49,30 @@ public interface CaseService {
 
     List<CaseEvidenceItem> listEvidences(Long id);
 
+    CaseDetailResponse submitLegalReview(Long id,
+                                         LegalReviewSubmitRequest request,
+                                         String operatorName,
+                                         HttpServletRequest httpRequest);
+
+    CaseDetailResponse approveLegalReview(Long id,
+                                          LegalReviewApproveRequest request,
+                                          String operatorName,
+                                          HttpServletRequest httpRequest);
+
+    CaseDetailResponse rejectLegalReview(Long id,
+                                         LegalReviewRejectRequest request,
+                                         String operatorName,
+                                         HttpServletRequest httpRequest);
+
+    CaseDetailResponse saveDecision(Long id,
+                                    SaveDecisionRequest request,
+                                    String operatorName,
+                                    HttpServletRequest httpRequest);
+
+    CaseDetailResponse recordExecution(Long id,
+                                       RecordExecutionRequest request,
+                                       String operatorName,
+                                       HttpServletRequest httpRequest);
+
     CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest);
 }
-

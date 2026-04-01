@@ -8,7 +8,12 @@ import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CreateEvidenceRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewApproveRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewRejectRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewSubmitRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
+import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
+import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
@@ -113,6 +118,46 @@ public class CaseController {
     @GetMapping("/{id}/evidences")
     public ResponseEntity<ApiResponse<List<CaseEvidenceItem>>> listCaseEvidences(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(caseService.listEvidences(id)));
+    }
+
+    @PostMapping("/{id}/legal-review/submit")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> submitLegalReview(@PathVariable Long id,
+                                                                             @Valid @RequestBody LegalReviewSubmitRequest request,
+                                                                             HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.submitLegalReview(id, request, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Legal review submitted successfully"));
+    }
+
+    @PostMapping("/{id}/legal-review/approve")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> approveLegalReview(@PathVariable Long id,
+                                                                              @Valid @RequestBody LegalReviewApproveRequest request,
+                                                                              HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.approveLegalReview(id, request, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Legal review approved successfully"));
+    }
+
+    @PostMapping("/{id}/legal-review/reject")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> rejectLegalReview(@PathVariable Long id,
+                                                                             @Valid @RequestBody LegalReviewRejectRequest request,
+                                                                             HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.rejectLegalReview(id, request, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Legal review rejected successfully"));
+    }
+
+    @PostMapping("/{id}/decision")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> saveDecision(@PathVariable Long id,
+                                                                        @Valid @RequestBody SaveDecisionRequest request,
+                                                                        HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.saveDecision(id, request, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Decision saved successfully"));
+    }
+
+    @PostMapping("/{id}/execution")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> recordExecution(@PathVariable Long id,
+                                                                           @Valid @RequestBody RecordExecutionRequest request,
+                                                                           HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.recordExecution(id, request, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Execution recorded successfully"));
     }
 
     @PostMapping("/{id}/archive")

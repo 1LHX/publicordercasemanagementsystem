@@ -7,13 +7,21 @@ import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CreateEvidenceRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewApproveRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewRejectRequest;
+import com.example.publicordercasemanagementsystem.dto.LegalReviewSubmitRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
+import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
+import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
 import com.example.publicordercasemanagementsystem.mapper.CaseMapper;
 import com.example.publicordercasemanagementsystem.mapper.UserMapper;
+import com.example.publicordercasemanagementsystem.pojo.CaseDecision;
 import com.example.publicordercasemanagementsystem.pojo.CaseEvidence;
+import com.example.publicordercasemanagementsystem.pojo.CaseExecution;
+import com.example.publicordercasemanagementsystem.pojo.CaseLegalReview;
 import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import com.example.publicordercasemanagementsystem.pojo.CaseRecord;
 import com.example.publicordercasemanagementsystem.pojo.User;
@@ -31,7 +39,16 @@ public class CaseServiceImpl implements CaseService {
 
     private static final String STATUS_REGISTERED = "REGISTERED";
     private static final String STATUS_ACCEPTED = "ACCEPTED";
+    private static final String STATUS_INVESTIGATING = "INVESTIGATING";
+    private static final String STATUS_LEGAL_REVIEW = "LEGAL_REVIEW";
+    private static final String STATUS_DECIDED = "DECIDED";
+    private static final String STATUS_EXECUTED = "EXECUTED";
     private static final String STATUS_ARCHIVED = "ARCHIVED";
+
+    private static final String REVIEW_SUBMITTED = "SUBMITTED";
+    private static final String REVIEW_APPROVED = "APPROVED";
+    private static final String REVIEW_REJECTED = "REJECTED";
+
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_SIZE = 100;
@@ -207,6 +224,146 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
+    public CaseDetailResponse submitLegalReview(Long id,
+                                                LegalReviewSubmitRequest request,
+                                                String operatorName,
+                                                HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_INVESTIGATING, "Case must be INVESTIGATING before legal review submission");
+
+        User operator = requireOperator(operatorName);
+        LocalDateTime now = LocalDateTime.now();
+
+        CaseLegalReview review = new CaseLegalReview();
+        review.setCaseId(id);
+        review.setReviewStatus(REVIEW_SUBMITTED);
+        review.setReviewComment(request.getComment());
+        review.setReviewerId(operator.getId());
+        review.setReviewedAt(now);
+        review.setCreatedAt(now);
+        review.setUpdatedAt(now);
+        caseMapper.upsertLegalReview(review);
+
+        caseMapper.updateCaseStatus(id, STATUS_LEGAL_REVIEW, record.getAcceptanceTime());
+        addProcess(id, record.getStatus(), STATUS_LEGAL_REVIEW, operatorName, request.getComment(), httpRequest);
+        return toDetail(requireCase(id));
+    }
+
+    @Override
+    public CaseDetailResponse approveLegalReview(Long id,
+                                                 LegalReviewApproveRequest request,
+                                                 String operatorName,
+                                                 HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW to approve legal review");
+
+        CaseLegalReview existing = caseMapper.findLegalReviewByCaseId(id);
+        if (existing == null || !REVIEW_SUBMITTED.equals(existing.getReviewStatus())) {
+            throw new AuthException(400, "Legal review is not in submitted state");
+        }
+
+        User operator = requireOperator(operatorName);
+        LocalDateTime now = LocalDateTime.now();
+
+        CaseLegalReview review = new CaseLegalReview();
+        review.setCaseId(id);
+        review.setReviewStatus(REVIEW_APPROVED);
+        review.setReviewComment(request.getComment());
+        review.setReviewerId(operator.getId());
+        review.setReviewedAt(now);
+        review.setCreatedAt(now);
+        review.setUpdatedAt(now);
+        caseMapper.upsertLegalReview(review);
+
+        addProcess(id, record.getStatus(), record.getStatus(), operatorName, "Legal review approved", httpRequest);
+        return toDetail(requireCase(id));
+    }
+
+    @Override
+    public CaseDetailResponse rejectLegalReview(Long id,
+                                                LegalReviewRejectRequest request,
+                                                String operatorName,
+                                                HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW to reject legal review");
+
+        User operator = requireOperator(operatorName);
+        LocalDateTime now = LocalDateTime.now();
+
+        CaseLegalReview review = new CaseLegalReview();
+        review.setCaseId(id);
+        review.setReviewStatus(REVIEW_REJECTED);
+        review.setReviewComment(request.getReason());
+        review.setReviewerId(operator.getId());
+        review.setReviewedAt(now);
+        review.setCreatedAt(now);
+        review.setUpdatedAt(now);
+        caseMapper.upsertLegalReview(review);
+
+        caseMapper.updateCaseStatus(id, STATUS_INVESTIGATING, record.getAcceptanceTime());
+        addProcess(id, record.getStatus(), STATUS_INVESTIGATING, operatorName, request.getReason(), httpRequest);
+        return toDetail(requireCase(id));
+    }
+
+    @Override
+    public CaseDetailResponse saveDecision(Long id,
+                                           SaveDecisionRequest request,
+                                           String operatorName,
+                                           HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW before decision");
+
+        CaseLegalReview review = caseMapper.findLegalReviewByCaseId(id);
+        if (review == null || !REVIEW_APPROVED.equals(review.getReviewStatus())) {
+            throw new AuthException(400, "Legal review must be approved before decision");
+        }
+
+        User operator = requireOperator(operatorName);
+        LocalDateTime now = LocalDateTime.now();
+
+        CaseDecision decision = new CaseDecision();
+        decision.setCaseId(id);
+        decision.setDecisionResult(request.getDecisionResult());
+        decision.setDecisionContent(request.getDecisionContent());
+        decision.setCoerciveMeasureCode(request.getCoerciveMeasureCode());
+        decision.setDecidedBy(operator.getId());
+        decision.setDecidedAt(request.getDecidedAt() == null ? now : request.getDecidedAt());
+        decision.setCreatedAt(now);
+        decision.setUpdatedAt(now);
+        caseMapper.upsertDecision(decision);
+
+        caseMapper.updateCaseStatus(id, STATUS_DECIDED, record.getAcceptanceTime());
+        addProcess(id, record.getStatus(), STATUS_DECIDED, operatorName, "Decision saved", httpRequest);
+        return toDetail(requireCase(id));
+    }
+
+    @Override
+    public CaseDetailResponse recordExecution(Long id,
+                                              RecordExecutionRequest request,
+                                              String operatorName,
+                                              HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_DECIDED, "Case must be DECIDED before execution");
+
+        User operator = requireOperator(operatorName);
+        LocalDateTime now = LocalDateTime.now();
+
+        CaseExecution execution = new CaseExecution();
+        execution.setCaseId(id);
+        execution.setExecutionResult(request.getExecutionResult());
+        execution.setExecutionNote(request.getExecutionNote());
+        execution.setExecutedBy(operator.getId());
+        execution.setExecutedAt(request.getExecutedAt() == null ? now : request.getExecutedAt());
+        execution.setCreatedAt(now);
+        execution.setUpdatedAt(now);
+        caseMapper.upsertExecution(execution);
+
+        caseMapper.updateCaseStatus(id, STATUS_EXECUTED, record.getAcceptanceTime());
+        addProcess(id, record.getStatus(), STATUS_EXECUTED, operatorName, "Execution recorded", httpRequest);
+        return toDetail(requireCase(id));
+    }
+
+    @Override
     public CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         caseMapper.updateCaseStatus(id, STATUS_ARCHIVED, record.getAcceptanceTime());
@@ -249,6 +406,12 @@ public class CaseServiceImpl implements CaseService {
             throw new AuthException(404, "Case not found");
         }
         return record;
+    }
+
+    private void requireStatus(CaseRecord record, String expectedStatus, String message) {
+        if (!expectedStatus.equals(record.getStatus())) {
+            throw new AuthException(400, message);
+        }
     }
 
     private CaseListItem toListItem(CaseRecord record) {

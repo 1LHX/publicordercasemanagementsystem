@@ -51,6 +51,17 @@
         <result column="uploaded_at" property="uploadedAt" />
     </resultMap>
 
+    <resultMap id="CaseLegalReviewResult" type="com.example.publicordercasemanagementsystem.pojo.CaseLegalReview">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="review_status" property="reviewStatus" />
+        <result column="review_comment" property="reviewComment" />
+        <result column="reviewer_id" property="reviewerId" />
+        <result column="reviewed_at" property="reviewedAt" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
     <sql id="CaseSelectColumns">
         c.id, c.case_number, c.title, c.type_code, dct.name as type_name, c.status,
         c.reporter_name, c.reporter_contact, c.incident_time, c.incident_location,
@@ -214,6 +225,59 @@
         where ce.case_id = #{caseId}
         order by ce.id desc
     </select>
+
+    <insert id="upsertLegalReview" useGeneratedKeys="true" keyProperty="id">
+        insert into case_legal_reviews (
+            case_id, review_status, review_comment, reviewer_id, reviewed_at, created_at, updated_at
+        ) values (
+            #{caseId}, #{reviewStatus}, #{reviewComment}, #{reviewerId}, #{reviewedAt}, #{createdAt}, #{updatedAt}
+        )
+        on duplicate key update
+            review_status = values(review_status),
+            review_comment = values(review_comment),
+            reviewer_id = values(reviewer_id),
+            reviewed_at = values(reviewed_at),
+            updated_at = values(updated_at)
+    </insert>
+
+    <select id="findLegalReviewByCaseId" resultMap="CaseLegalReviewResult">
+        select *
+        from case_legal_reviews
+        where case_id = #{caseId}
+    </select>
+
+    <insert id="upsertDecision" useGeneratedKeys="true" keyProperty="id">
+        insert into case_decisions (
+            case_id, decision_result, decision_content, coercive_measure_code,
+            decided_by, decided_at, created_at, updated_at
+        ) values (
+            #{caseId}, #{decisionResult}, #{decisionContent}, #{coerciveMeasureCode},
+            #{decidedBy}, #{decidedAt}, #{createdAt}, #{updatedAt}
+        )
+        on duplicate key update
+            decision_result = values(decision_result),
+            decision_content = values(decision_content),
+            coercive_measure_code = values(coercive_measure_code),
+            decided_by = values(decided_by),
+            decided_at = values(decided_at),
+            updated_at = values(updated_at)
+    </insert>
+
+    <insert id="upsertExecution" useGeneratedKeys="true" keyProperty="id">
+        insert into case_executions (
+            case_id, execution_result, execution_note,
+            executed_by, executed_at, created_at, updated_at
+        ) values (
+            #{caseId}, #{executionResult}, #{executionNote},
+            #{executedBy}, #{executedAt}, #{createdAt}, #{updatedAt}
+        )
+        on duplicate key update
+            execution_result = values(execution_result),
+            execution_note = values(execution_note),
+            executed_by = values(executed_by),
+            executed_at = values(executed_at),
+            updated_at = values(updated_at)
+    </insert>
 
 </mapper>
 

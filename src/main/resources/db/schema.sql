@@ -144,6 +144,59 @@ create table if not exists case_evidences (
     constraint fk_case_evidences_uploader foreign key (upload_user_id) references users(id)
 );
 
+-- 法制审核记录（每个案件保留最新一条）
+create table if not exists case_legal_reviews (
+    id bigint primary key auto_increment,
+    case_id bigint not null,
+    review_status varchar(30) not null,
+    review_comment varchar(500) null,
+    reviewer_id bigint not null,
+    reviewed_at datetime not null,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_case_legal_reviews_case (case_id),
+    index idx_case_legal_reviews_status (review_status),
+    index idx_case_legal_reviews_reviewer (reviewer_id),
+    constraint fk_case_legal_reviews_case foreign key (case_id) references cases(id),
+    constraint fk_case_legal_reviews_reviewer foreign key (reviewer_id) references users(id)
+);
+
+-- 案件裁决记录（每个案件保留最新一条）
+create table if not exists case_decisions (
+    id bigint primary key auto_increment,
+    case_id bigint not null,
+    decision_result varchar(50) not null,
+    decision_content text not null,
+    coercive_measure_code varchar(50) null,
+    decided_by bigint not null,
+    decided_at datetime not null,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_case_decisions_case (case_id),
+    index idx_case_decisions_result (decision_result),
+    index idx_case_decisions_decider (decided_by),
+    constraint fk_case_decisions_case foreign key (case_id) references cases(id),
+    constraint fk_case_decisions_measure foreign key (coercive_measure_code) references dict_coercive_measures(code),
+    constraint fk_case_decisions_decider foreign key (decided_by) references users(id)
+);
+
+-- 案件执行记录（每个案件保留最新一条）
+create table if not exists case_executions (
+    id bigint primary key auto_increment,
+    case_id bigint not null,
+    execution_result varchar(50) not null,
+    execution_note varchar(500) null,
+    executed_by bigint not null,
+    executed_at datetime not null,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_case_executions_case (case_id),
+    index idx_case_executions_result (execution_result),
+    index idx_case_executions_executor (executed_by),
+    constraint fk_case_executions_case foreign key (case_id) references cases(id),
+    constraint fk_case_executions_executor foreign key (executed_by) references users(id)
+);
+
 -- 初始化案件类型
 insert into dict_case_types (code, name, sort_order, is_active) values
     ('THEFT', '盗窃', 1, 1),

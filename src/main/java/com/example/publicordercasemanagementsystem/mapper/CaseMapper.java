@@ -1,6 +1,9 @@
 package com.example.publicordercasemanagementsystem.mapper;
 
+import com.example.publicordercasemanagementsystem.pojo.CaseDecision;
 import com.example.publicordercasemanagementsystem.pojo.CaseEvidence;
+import com.example.publicordercasemanagementsystem.pojo.CaseExecution;
+import com.example.publicordercasemanagementsystem.pojo.CaseLegalReview;
 import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import com.example.publicordercasemanagementsystem.pojo.CaseRecord;
 import org.apache.ibatis.annotations.Param;
@@ -50,5 +53,12 @@ public interface CaseMapper {
     int insertEvidence(CaseEvidence evidence);
 
     List<CaseEvidence> findEvidencesByCaseId(Long caseId);
-}
 
+    int upsertLegalReview(CaseLegalReview legalReview);
+
+    CaseLegalReview findLegalReviewByCaseId(Long caseId);
+
+    int upsertDecision(CaseDecision decision);
+
+    int upsertExecution(CaseExecution execution);
+}
