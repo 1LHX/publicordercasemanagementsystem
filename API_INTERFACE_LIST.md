@@ -31,6 +31,23 @@ Version: v0.1 (inventory + implementation roadmap)
 | Users | GET | `/api/users/me` | Current user profile by JWT `name` | JWT | Implemented |
 | AI | POST | `/api/dashscope/chat` | Chat completion proxy | Public | Implemented |
 | AI | POST | `/api/dashscope/prompt` | Prompt-to-chat proxy | Public | Implemented |
+| Cases | POST | `/api/cases` | Create case (report registration/intake) | JWT | Implemented |
+| Cases | GET | `/api/cases` | Paged case search with filters | JWT | Implemented |
+| Cases | GET | `/api/cases/{id}` | Case detail | JWT | Implemented |
+| Cases | PUT | `/api/cases/{id}` | Update case basic info | JWT | Implemented |
+| Cases | POST | `/api/cases/{id}/accept` | Accept case after review | JWT | Implemented |
+| Cases | POST | `/api/cases/{id}/assign` | Assign handling officer | JWT | Implemented |
+| Evidences | POST | `/api/cases/{id}/evidences` | Upload/link evidence to case | JWT | Implemented |
+| Evidences | GET | `/api/cases/{id}/evidences` | List evidences by case | JWT | Implemented |
+| Processes | POST | `/api/cases/{id}/status-transitions` | Move case to next status | JWT | Implemented |
+| Processes | GET | `/api/cases/{id}/processes` | Case process history | JWT | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/submit` | Submit for legal review | JWT | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/approve` | Approve legal review | JWT | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/reject` | Reject legal review with reason | JWT | Implemented |
+| Decision | POST | `/api/cases/{id}/decision` | Save decision result | JWT | Implemented |
+| Execution | POST | `/api/cases/{id}/execution` | Record decision execution | JWT | Implemented |
+| Archive | POST | `/api/cases/{id}/archive` | Archive case | JWT | Implemented |
+| Dictionary | GET | `/api/dictionaries/case-types` | List case type dictionary | JWT | Implemented |
 
 ---
 
@@ -40,12 +57,12 @@ Version: v0.1 (inventory + implementation roadmap)
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Cases | POST | `/api/cases` | Create case (report registration/intake) | JWT | P0 | Planned |
-| Cases | GET | `/api/cases` | Paged case search with filters | JWT | P0 | Planned |
-| Cases | GET | `/api/cases/{id}` | Case detail | JWT | P0 | Planned |
-| Cases | PUT | `/api/cases/{id}` | Update case basic info | JWT | P0 | Planned |
-| Cases | POST | `/api/cases/{id}/accept` | Accept case after review | JWT | P0 | Planned |
-| Cases | POST | `/api/cases/{id}/assign` | Assign handling officer | JWT | P0 | Planned |
+| Cases | POST | `/api/cases` | Create case (report registration/intake) | JWT | P0 | Implemented |
+| Cases | GET | `/api/cases` | Paged case search with filters | JWT | P0 | Implemented |
+| Cases | GET | `/api/cases/{id}` | Case detail | JWT | P0 | Implemented |
+| Cases | PUT | `/api/cases/{id}` | Update case basic info | JWT | P0 | Implemented |
+| Cases | POST | `/api/cases/{id}/accept` | Accept case after review | JWT | P0 | Implemented |
+| Cases | POST | `/api/cases/{id}/assign` | Assign handling officer | JWT | P0 | Implemented |
 
 Suggested query filters for `GET /api/cases`:
 - `caseNumber`, `title`, `typeCode`, `status`, `departmentId`, `handlingOfficerId`
@@ -55,8 +72,8 @@ Suggested query filters for `GET /api/cases`:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Evidences | POST | `/api/cases/{id}/evidences` | Upload/link evidence to case | JWT | P0 | Planned |
-| Evidences | GET | `/api/cases/{id}/evidences` | List evidences by case | JWT | P0 | Planned |
+| Evidences | POST | `/api/cases/{id}/evidences` | Upload/link evidence to case | JWT | P0 | Implemented |
+| Evidences | GET | `/api/cases/{id}/evidences` | List evidences by case | JWT | P0 | Implemented |
 | Evidences | GET | `/api/evidences/{evidenceId}` | Evidence detail | JWT | P1 | Planned |
 | Evidences | PUT | `/api/evidences/{evidenceId}` | Update evidence metadata/remark | JWT | P1 | Planned |
 | Evidences | DELETE | `/api/evidences/{evidenceId}` | Remove evidence | JWT | P1 | Planned |
@@ -65,13 +82,13 @@ Suggested query filters for `GET /api/cases`:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Processes | POST | `/api/cases/{id}/status-transitions` | Move case to next status | JWT | P0 | Planned |
-| Processes | GET | `/api/cases/{id}/processes` | Case process history | JWT | P0 | Planned |
-| Review | POST | `/api/cases/{id}/legal-review/submit` | Submit for legal review | JWT | P1 | Planned |
-| Review | POST | `/api/cases/{id}/legal-review/approve` | Approve legal review | JWT | P1 | Planned |
-| Review | POST | `/api/cases/{id}/legal-review/reject` | Reject legal review with reason | JWT | P1 | Planned |
-| Decision | POST | `/api/cases/{id}/decision` | Save decision result | JWT | P1 | Planned |
-| Execution | POST | `/api/cases/{id}/execution` | Record decision execution | JWT | P1 | Planned |
+| Processes | POST | `/api/cases/{id}/status-transitions` | Move case to next status | JWT | P0 | Implemented |
+| Processes | GET | `/api/cases/{id}/processes` | Case process history | JWT | P0 | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/submit` | Submit for legal review | JWT | P1 | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/approve` | Approve legal review | JWT | P1 | Implemented |
+| Review | POST | `/api/cases/{id}/legal-review/reject` | Reject legal review with reason | JWT | P1 | Implemented |
+| Decision | POST | `/api/cases/{id}/decision` | Save decision result | JWT | P1 | Implemented |
+| Execution | POST | `/api/cases/{id}/execution` | Record decision execution | JWT | P1 | Implemented |
 
 Recommended baseline status machine:
 - `REGISTERED -> ACCEPTED -> INVESTIGATING -> LEGAL_REVIEW -> DECIDED -> EXECUTED -> ARCHIVED`
@@ -80,7 +97,7 @@ Recommended baseline status machine:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Archive | POST | `/api/cases/{id}/archive` | Archive case | JWT | P0 | Planned |
+| Archive | POST | `/api/cases/{id}/archive` | Archive case | JWT | P0 | Implemented |
 | Archive | POST | `/api/cases/{id}/unarchive` | Unarchive case (admin) | JWT | P1 | Planned |
 | Archive | GET | `/api/cases/archived` | Paged archived cases | JWT | P1 | Planned |
 | Export | GET | `/api/cases/{id}/export` | Export dossier (PDF/ZIP) | JWT | P1 | Planned |
@@ -93,7 +110,7 @@ Recommended baseline status machine:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Dictionary | GET | `/api/dictionaries/case-types` | List case type dictionary | JWT | P0 | Planned |
+| Dictionary | GET | `/api/dictionaries/case-types` | List case type dictionary | JWT | P0 | Implemented |
 | Dictionary | GET | `/api/dictionaries/coercive-measures` | List coercive measure dictionary | JWT | P1 | Planned |
 | Org | GET | `/api/departments` | Department list | JWT | P1 | Planned |
 | Org | GET | `/api/roles` | Role list | JWT | P1 | Planned |
