@@ -47,7 +47,12 @@ Version: v0.1 (inventory + implementation roadmap)
 | Decision | POST | `/api/cases/{id}/decision` | Save decision result | JWT | Implemented |
 | Execution | POST | `/api/cases/{id}/execution` | Record decision execution | JWT | Implemented |
 | Archive | POST | `/api/cases/{id}/archive` | Archive case | JWT | Implemented |
+| Archive | POST | `/api/cases/{id}/unarchive` | Unarchive case (admin) | JWT | Implemented |
+| Archive | GET | `/api/cases/archived` | Paged archived cases | JWT | Implemented |
+| Export | GET | `/api/cases/{id}/export` | Export dossier (PDF/ZIP) | JWT | Implemented |
 | Dictionary | GET | `/api/dictionaries/case-types` | List case type dictionary | JWT | Implemented |
+| Deadline | GET | `/api/cases/deadline-warnings` | Cases nearing deadline | JWT | Implemented |
+| Deadline | GET | `/api/cases/overdue` | Overdue cases | JWT | Implemented |
 
 ---
 
@@ -98,9 +103,9 @@ Recommended baseline status machine:
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
 | Archive | POST | `/api/cases/{id}/archive` | Archive case | JWT | P0 | Implemented |
-| Archive | POST | `/api/cases/{id}/unarchive` | Unarchive case (admin) | JWT | P1 | Planned |
-| Archive | GET | `/api/cases/archived` | Paged archived cases | JWT | P1 | Planned |
-| Export | GET | `/api/cases/{id}/export` | Export dossier (PDF/ZIP) | JWT | P1 | Planned |
+| Archive | POST | `/api/cases/{id}/unarchive` | Unarchive case (admin) | JWT | P1 | Implemented |
+| Archive | GET | `/api/cases/archived` | Paged archived cases | JWT | P1 | Implemented |
+| Export | GET | `/api/cases/{id}/export` | Export dossier (PDF/ZIP) | JWT | P1 | Implemented |
 
 ---
 
@@ -119,8 +124,8 @@ Recommended baseline status machine:
 
 | Module | Method | Path | Purpose | Auth | Priority | Status |
 |---|---|---|---|---|---|---|
-| Deadline | GET | `/api/cases/deadline-warnings` | Cases nearing deadline | JWT | P1 | Planned |
-| Deadline | GET | `/api/cases/overdue` | Overdue cases | JWT | P1 | Planned |
+| Deadline | GET | `/api/cases/deadline-warnings` | Cases nearing deadline | JWT | P1 | Implemented |
+| Deadline | GET | `/api/cases/overdue` | Overdue cases | JWT | P1 | Implemented |
 | Deadline | POST | `/api/cases/{id}/deadline/recalculate` | Recompute deadline | JWT | P2 | Planned |
 
 ### 4.3 Statistics and Reports
