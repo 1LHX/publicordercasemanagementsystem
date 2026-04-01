@@ -8,6 +8,7 @@ import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import com.example.publicordercasemanagementsystem.pojo.CaseRecord;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CaseMapper {
@@ -36,6 +37,20 @@ public interface CaseMapper {
                                   @Param("offset") int offset,
                                   @Param("size") int size);
 
+    long countDeadlineWarningCases(@Param("deadlineBefore") LocalDateTime deadlineBefore);
+
+    List<CaseRecord> findDeadlineWarningPage(@Param("deadlineBefore") LocalDateTime deadlineBefore,
+                                             @Param("offset") int offset,
+                                             @Param("size") int size);
+
+    long countOverdueCases(@Param("deadlineBefore") LocalDateTime deadlineBefore);
+
+    List<CaseRecord> findOverdueCasePage(@Param("deadlineBefore") LocalDateTime deadlineBefore,
+                                         @Param("offset") int offset,
+                                         @Param("size") int size);
+
+    int refreshOverdueFlags(@Param("deadlineBefore") LocalDateTime deadlineBefore);
+
     int updateCase(CaseRecord record);
 
     int assignOfficer(@Param("id") Long id,
@@ -49,6 +64,8 @@ public interface CaseMapper {
     int insertProcess(CaseProcess process);
 
     List<CaseProcess> findProcessesByCaseId(Long caseId);
+
+    CaseProcess findLatestArchiveProcessByCaseId(Long caseId);
 
     int insertEvidence(CaseEvidence evidence);
 

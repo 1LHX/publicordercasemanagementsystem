@@ -163,6 +163,60 @@
         limit #{offset}, #{size}
     </select>
 
+    <select id="countDeadlineWarningCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.deadline_time is not null
+          and c.deadline_time >= now()
+          and c.deadline_time &lt;= #{deadlineBefore}
+          and c.status not in ('ARCHIVED', 'EXECUTED')
+    </select>
+
+    <select id="findDeadlineWarningPage" resultMap="CaseRecordResult">
+        select <include refid="CaseSelectColumns" />
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        left join users u on u.id = c.handling_officer_id
+        left join departments dep on dep.id = c.department_id
+        where c.deadline_time is not null
+          and c.deadline_time >= now()
+          and c.deadline_time &lt;= #{deadlineBefore}
+          and c.status not in ('ARCHIVED', 'EXECUTED')
+        order by c.deadline_time asc, c.id desc
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countOverdueCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.deadline_time is not null
+          and c.deadline_time &lt; #{deadlineBefore}
+          and c.status not in ('ARCHIVED', 'EXECUTED')
+    </select>
+
+    <select id="findOverdueCasePage" resultMap="CaseRecordResult">
+        select <include refid="CaseSelectColumns" />
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        left join users u on u.id = c.handling_officer_id
+        left join departments dep on dep.id = c.department_id
+        where c.deadline_time is not null
+          and c.deadline_time &lt; #{deadlineBefore}
+          and c.status not in ('ARCHIVED', 'EXECUTED')
+        order by c.deadline_time asc, c.id desc
+        limit #{offset}, #{size}
+    </select>
+
+    <update id="refreshOverdueFlags">
+        update cases
+        set is_overdue = case
+            when deadline_time is not null
+                 and deadline_time &lt; #{deadlineBefore}
+                 and status not in ('ARCHIVED', 'EXECUTED') then 1
+            else 0
+        end
+    </update>
+
     <update id="updateCase">
         update cases
         set title = #{title},
@@ -208,6 +262,16 @@
         left join users u on u.id = cp.operator_id
         where cp.case_id = #{caseId}
         order by cp.id desc
+    </select>
+
+    <select id="findLatestArchiveProcessByCaseId" resultMap="CaseProcessResult">
+        select cp.*, u.name as operator_name
+        from case_processes cp
+        left join users u on u.id = cp.operator_id
+        where cp.case_id = #{caseId}
+          and cp.to_status = 'ARCHIVED'
+        order by cp.id desc
+        limit 1
     </select>
 
     <insert id="insertEvidence" useGeneratedKeys="true" keyProperty="id">

@@ -4,6 +4,7 @@ import com.example.publicordercasemanagementsystem.dto.ApiResponse;
 import com.example.publicordercasemanagementsystem.dto.AssignCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDetailResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseEvidenceItem;
+import com.example.publicordercasemanagementsystem.dto.CaseExportResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
@@ -69,9 +70,36 @@ public class CaseController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @GetMapping("/archived")
+    public ResponseEntity<ApiResponse<PageResult<CaseListItem>>> listArchivedCases(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.ok(caseService.listArchivedCases(page, size)));
+    }
+
+    @GetMapping("/deadline-warnings")
+    public ResponseEntity<ApiResponse<PageResult<CaseListItem>>> listDeadlineWarnings(
+            @RequestParam(required = false) Integer withinDays,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.ok(caseService.listDeadlineWarnings(withinDays, page, size)));
+    }
+
+    @GetMapping("/overdue")
+    public ResponseEntity<ApiResponse<PageResult<CaseListItem>>> listOverdueCases(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.ok(caseService.listOverdueCases(page, size)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> getCaseById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(caseService.getCaseById(id)));
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<ApiResponse<CaseExportResponse>> exportCase(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(caseService.exportCase(id), "Case dossier exported"));
     }
 
     @PutMapping("/{id}")
@@ -165,6 +193,13 @@ public class CaseController {
                                                                        HttpServletRequest httpRequest) {
         CaseDetailResponse response = caseService.archiveCase(id, getCurrentUserName(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case archived successfully"));
+    }
+
+    @PostMapping("/{id}/unarchive")
+    public ResponseEntity<ApiResponse<CaseDetailResponse>> unarchiveCase(@PathVariable Long id,
+                                                                         HttpServletRequest httpRequest) {
+        CaseDetailResponse response = caseService.unarchiveCase(id, getCurrentUserName(), httpRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Case unarchived successfully"));
     }
 
     private String getCurrentUserName() {

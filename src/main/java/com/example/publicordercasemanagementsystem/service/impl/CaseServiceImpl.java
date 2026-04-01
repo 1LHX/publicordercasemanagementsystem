@@ -3,6 +3,7 @@ package com.example.publicordercasemanagementsystem.service.impl;
 import com.example.publicordercasemanagementsystem.dto.AssignCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDetailResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseEvidenceItem;
+import com.example.publicordercasemanagementsystem.dto.CaseExportResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
@@ -32,7 +33,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class CaseServiceImpl implements CaseService {
@@ -52,6 +55,7 @@ public class CaseServiceImpl implements CaseService {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_SIZE = 100;
+    private static final int DEFAULT_WARNING_DAYS = 3;
 
     private final CaseMapper caseMapper;
     private final UserMapper userMapper;
@@ -119,8 +123,69 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
+    public PageResult<CaseListItem> listArchivedCases(Integer page, Integer size) {
+        return listCases(null, null, null, STATUS_ARCHIVED, null, null, null, page, size);
+    }
+
+    @Override
+    public PageResult<CaseListItem> listDeadlineWarnings(Integer withinDays, Integer page, Integer size) {
+        caseMapper.refreshOverdueFlags(LocalDateTime.now());
+
+        int safeDays = withinDays == null || withinDays < 1 ? DEFAULT_WARNING_DAYS : withinDays;
+        int safePage = page == null || page < 1 ? DEFAULT_PAGE : page;
+        int safeSize = size == null || size < 1 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+        int offset = (safePage - 1) * safeSize;
+
+        LocalDateTime deadlineBefore = LocalDateTime.now().plusDays(safeDays);
+        long total = caseMapper.countDeadlineWarningCases(deadlineBefore);
+        if (total == 0) {
+            return new PageResult<>(new ArrayList<>(), 0, safePage, safeSize);
+        }
+
+        List<CaseRecord> records = caseMapper.findDeadlineWarningPage(deadlineBefore, offset, safeSize);
+        return toPageResult(records, total, safePage, safeSize);
+    }
+
+    @Override
+    public PageResult<CaseListItem> listOverdueCases(Integer page, Integer size) {
+        LocalDateTime now = LocalDateTime.now();
+        caseMapper.refreshOverdueFlags(now);
+
+        int safePage = page == null || page < 1 ? DEFAULT_PAGE : page;
+        int safeSize = size == null || size < 1 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+        int offset = (safePage - 1) * safeSize;
+
+        long total = caseMapper.countOverdueCases(now);
+        if (total == 0) {
+            return new PageResult<>(new ArrayList<>(), 0, safePage, safeSize);
+        }
+
+        List<CaseRecord> records = caseMapper.findOverdueCasePage(now, offset, safeSize);
+        return toPageResult(records, total, safePage, safeSize);
+    }
+
+    @Override
     public CaseDetailResponse getCaseById(Long id) {
         return toDetail(requireCase(id));
+    }
+
+    @Override
+    public CaseExportResponse exportCase(Long id) {
+        CaseRecord record = requireCase(id);
+        List<CaseProcess> processes = caseMapper.findProcessesByCaseId(id);
+        List<CaseEvidence> evidences = caseMapper.findEvidencesByCaseId(id);
+
+        String fileName = "case-" + record.getCaseNumber() + ".txt";
+        String content = buildDossierContent(record, processes, evidences);
+
+        CaseExportResponse response = new CaseExportResponse();
+        response.setCaseId(record.getId());
+        response.setCaseNumber(record.getCaseNumber());
+        response.setFileName(fileName);
+        response.setContentType("text/plain");
+        response.setContentBase64(Base64.getEncoder().encodeToString(content.getBytes(StandardCharsets.UTF_8)));
+        response.setGeneratedAt(LocalDateTime.now());
+        return response;
     }
 
     @Override
@@ -371,6 +436,21 @@ public class CaseServiceImpl implements CaseService {
         return toDetail(requireCase(id));
     }
 
+    @Override
+    public CaseDetailResponse unarchiveCase(Long id, String operatorName, HttpServletRequest httpRequest) {
+        CaseRecord record = requireCase(id);
+        requireStatus(record, STATUS_ARCHIVED, "Only ARCHIVED case can be unarchived");
+
+        CaseProcess archiveProcess = caseMapper.findLatestArchiveProcessByCaseId(id);
+        String restoreStatus = archiveProcess == null || archiveProcess.getFromStatus() == null
+                ? STATUS_EXECUTED
+                : archiveProcess.getFromStatus();
+
+        caseMapper.updateCaseStatus(id, restoreStatus, record.getAcceptanceTime());
+        addProcess(id, STATUS_ARCHIVED, restoreStatus, operatorName, "Case unarchived", httpRequest);
+        return toDetail(requireCase(id));
+    }
+
     private void addProcess(Long caseId,
                             String fromStatus,
                             String toStatus,
@@ -412,6 +492,30 @@ public class CaseServiceImpl implements CaseService {
         if (!expectedStatus.equals(record.getStatus())) {
             throw new AuthException(400, message);
         }
+    }
+
+    private PageResult<CaseListItem> toPageResult(List<CaseRecord> records, long total, int page, int size) {
+        List<CaseListItem> items = new ArrayList<>(records.size());
+        for (CaseRecord record : records) {
+            items.add(toListItem(record));
+        }
+        return new PageResult<>(items, total, page, size);
+    }
+
+    private String buildDossierContent(CaseRecord record,
+                                       List<CaseProcess> processes,
+                                       List<CaseEvidence> evidences) {
+        return "Case Number: " + record.getCaseNumber() + "\n"
+                + "Title: " + record.getTitle() + "\n"
+                + "Status: " + record.getStatus() + "\n"
+                + "Type: " + record.getTypeCode() + "\n"
+                + "DepartmentId: " + record.getDepartmentId() + "\n"
+                + "Reporter: " + record.getReporterName() + "\n"
+                + "Incident Time: " + record.getIncidentTime() + "\n"
+                + "Deadline Time: " + record.getDeadlineTime() + "\n"
+                + "Processes: " + processes.size() + "\n"
+                + "Evidences: " + evidences.size() + "\n"
+                + "Generated At: " + LocalDateTime.now() + "\n";
     }
 
     private CaseListItem toListItem(CaseRecord record) {

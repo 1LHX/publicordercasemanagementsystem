@@ -3,6 +3,7 @@ package com.example.publicordercasemanagementsystem.service;
 import com.example.publicordercasemanagementsystem.dto.AssignCaseRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDetailResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseEvidenceItem;
+import com.example.publicordercasemanagementsystem.dto.CaseExportResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseListItem;
 import com.example.publicordercasemanagementsystem.dto.CaseProcessItem;
 import com.example.publicordercasemanagementsystem.dto.CreateCaseRequest;
@@ -33,7 +34,15 @@ public interface CaseService {
                                        Integer page,
                                        Integer size);
 
+    PageResult<CaseListItem> listArchivedCases(Integer page, Integer size);
+
+    PageResult<CaseListItem> listDeadlineWarnings(Integer withinDays, Integer page, Integer size);
+
+    PageResult<CaseListItem> listOverdueCases(Integer page, Integer size);
+
     CaseDetailResponse getCaseById(Long id);
+
+    CaseExportResponse exportCase(Long id);
 
     CaseDetailResponse updateCase(Long id, UpdateCaseRequest request);
 
@@ -75,4 +84,6 @@ public interface CaseService {
                                        HttpServletRequest httpRequest);
 
     CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest);
+
+    CaseDetailResponse unarchiveCase(Long id, String operatorName, HttpServletRequest httpRequest);
 }
