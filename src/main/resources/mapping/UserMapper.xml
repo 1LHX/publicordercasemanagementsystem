@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.UserMapper">
+
+    <resultMap id="UserResult" type="com.example.publicordercasemanagementsystem.pojo.User">
+        <id column="id" property="id" />
+        <result column="password" property="password" />
+        <result column="name" property="name" />
+        <result column="role" property="role" />
+        <result column="role_name" property="roleName" />
+        <result column="department" property="department" />
+        <result column="department_id" property="departmentId" />
+        <result column="is_active" property="isActive" />
+        <result column="last_login" property="lastLogin" />
+        <result column="login_attempts" property="loginAttempts" />
+        <result column="locked_until" property="lockedUntil" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <select id="findByName" resultMap="UserResult">
+        select u.*, r.name as role_name, d.name as department
+        from users u
+        left join roles r on r.code = u.role
+        left join departments d on d.id = u.department_id
+        where u.name = #{name}
+    </select>
+
+    <select id="findById" resultMap="UserResult">
+        select u.*, r.name as role_name, d.name as department
+        from users u
+        left join roles r on r.code = u.role
+        left join departments d on d.id = u.department_id
+        where u.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into users (
+            password, name, role, department_id,
+            is_active, last_login, login_attempts, locked_until, created_at, updated_at
+        ) values (
+            #{password}, #{name}, #{role}, #{departmentId},
+            #{isActive}, #{lastLogin}, #{loginAttempts}, #{lockedUntil}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+
+    <update id="updateLoginSuccess">
+        update users
+        set last_login = now(), login_attempts = 0, locked_until = null, updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="incrementLoginAttempts">
+        update users
+        set login_attempts = login_attempts + 1, updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="lockUser">
+        update users
+        set locked_until = date_add(now(), interval 30 minute), updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="unlockUser">
+        update users
+        set locked_until = null, login_attempts = 0, updated_at = now()
+        where id = #{id}
+    </update>
+
+    <select id="countByFilters" resultType="long">
+        select count(1)
+        from users u
+        left join roles r on r.code = u.role
+        left join departments d on d.id = u.department_id
+        <where>
+            <if test="name != null and name != ''">
+                and u.name like concat('%', #{name}, '%')
+            </if>
+            <if test="role != null and role != ''">
+                and u.role = #{role}
+            </if>
+            <if test="department != null and department != ''">
+                and d.name like concat('%', #{department}, '%')
+            </if>
+            <if test="departmentId != null">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="isActive != null">
+                and u.is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="findPage" resultMap="UserResult">
+        select u.*, r.name as role_name, d.name as department
+        from users u
+        left join roles r on r.code = u.role
+        left join departments d on d.id = u.department_id
+        <where>
+            <if test="name != null and name != ''">
+                and u.name like concat('%', #{name}, '%')
+            </if>
+            <if test="role != null and role != ''">
+                and u.role = #{role}
+            </if>
+            <if test="department != null and department != ''">
+                and d.name like concat('%', #{department}, '%')
+            </if>
+            <if test="departmentId != null">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="isActive != null">
+                and u.is_active = #{isActive}
+            </if>
+        </where>
+        order by u.id desc
+        limit #{offset}, #{size}
+    </select>
+
+</mapper>

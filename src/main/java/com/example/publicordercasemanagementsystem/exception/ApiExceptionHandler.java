@@ -19,7 +19,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(WebClientResponseException.class)
     public ResponseEntity<ApiResponse<Void>> handleWebClient(WebClientResponseException ex) {
         String body = ex.getResponseBodyAsString();
-        String message = body != null && !body.isBlank() ? body : ex.getMessage();
+        String message = !body.isBlank() ? body : ex.getMessage();
         return ResponseEntity.status(ex.getStatusCode()).body(ApiResponse.fail(ex.getRawStatusCode(), message));
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuth(AuthException ex) {
+        return ResponseEntity.status(ex.getStatus())
+                .body(ApiResponse.fail(ex.getStatus(), ex.getMessage(), ex.getData()));
     }
 }

@@ -21,11 +21,19 @@ public class ApiResponse<T> {
     }
 
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(0, "success", data);
+        return new ApiResponse<>(200, "OK", data);
+    }
+
+    public static <T> ApiResponse<T> ok(T data, String message) {
+        return new ApiResponse<>(200, message, data);
     }
 
     public static <T> ApiResponse<T> fail(int code, String message) {
         return new ApiResponse<>(code, message, null);
+    }
+
+    public static <T> ApiResponse<T> fail(int code, String message, T data) {
+        return new ApiResponse<>(code, message, data);
     }
 
     public int getCode() {

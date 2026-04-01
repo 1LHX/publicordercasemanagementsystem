@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.RefreshTokenMapper">
+
+    <resultMap id="RefreshTokenResult" type="com.example.publicordercasemanagementsystem.pojo.RefreshToken">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="token_hash" property="tokenHash" />
+        <result column="expires_at" property="expiresAt" />
+        <result column="revoked" property="revoked" />
+        <result column="created_at" property="createdAt" />
+        <result column="last_used_at" property="lastUsedAt" />
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into refresh_tokens (
+            user_id, token_hash, expires_at, revoked, created_at, last_used_at
+        ) values (
+            #{userId}, #{tokenHash}, #{expiresAt}, #{revoked}, #{createdAt}, #{lastUsedAt}
+        )
+    </insert>
+
+    <select id="findValidByHash" resultMap="RefreshTokenResult">
+        select * from refresh_tokens
+        where token_hash = #{tokenHash} and revoked = 0
+    </select>
+
+    <update id="revokeByHash">
+        update refresh_tokens set revoked = 1 where token_hash = #{tokenHash}
+    </update>
+
+    <update id="revokeByUserId">
+        update refresh_tokens set revoked = 1 where user_id = #{userId}
+    </update>
+
+    <update id="updateLastUsed">
+        update refresh_tokens set last_used_at = now() where id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.CaseMapper">
+
+    <resultMap id="CaseRecordResult" type="com.example.publicordercasemanagementsystem.pojo.CaseRecord">
+        <id column="id" property="id" />
+        <result column="case_number" property="caseNumber" />
+        <result column="title" property="title" />
+        <result column="type_code" property="typeCode" />
+        <result column="type_name" property="typeName" />
+        <result column="status" property="status" />
+        <result column="reporter_name" property="reporterName" />
+        <result column="reporter_contact" property="reporterContact" />
+        <result column="incident_time" property="incidentTime" />
+        <result column="incident_location" property="incidentLocation" />
+        <result column="brief_description" property="briefDescription" />
+        <result column="handling_officer_id" property="handlingOfficerId" />
+        <result column="handling_officer_name" property="handlingOfficerName" />
+        <result column="department_id" property="departmentId" />
+        <result column="department_name" property="departmentName" />
+        <result column="acceptance_time" property="acceptanceTime" />
+        <result column="deadline_time" property="deadlineTime" />
+        <result column="is_overdue" property="isOverdue" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <resultMap id="CaseProcessResult" type="com.example.publicordercasemanagementsystem.pojo.CaseProcess">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="from_status" property="fromStatus" />
+        <result column="to_status" property="toStatus" />
+        <result column="operator_id" property="operatorId" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operation_time" property="operationTime" />
+        <result column="comment" property="comment" />
+        <result column="ip_address" property="ipAddress" />
+    </resultMap>
+
+    <resultMap id="CaseEvidenceResult" type="com.example.publicordercasemanagementsystem.pojo.CaseEvidence">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="file_name" property="fileName" />
+        <result column="file_path" property="filePath" />
+        <result column="file_type" property="fileType" />
+        <result column="file_size" property="fileSize" />
+        <result column="upload_user_id" property="uploadUserId" />
+        <result column="upload_user_name" property="uploadUserName" />
+        <result column="description" property="description" />
+        <result column="uploaded_at" property="uploadedAt" />
+    </resultMap>
+
+    <sql id="CaseSelectColumns">
+        c.id, c.case_number, c.title, c.type_code, dct.name as type_name, c.status,
+        c.reporter_name, c.reporter_contact, c.incident_time, c.incident_location,
+        c.brief_description, c.handling_officer_id, u.name as handling_officer_name,
+        c.department_id, dep.name as department_name, c.acceptance_time, c.deadline_time,
+        c.is_overdue, c.created_at, c.updated_at
+    </sql>
+
+    <insert id="insertCase" useGeneratedKeys="true" keyProperty="id">
+        insert into cases (
+            case_number, title, type_code, status,
+            reporter_name, reporter_contact, incident_time, incident_location,
+            brief_description, handling_officer_id, department_id,
+            acceptance_time, deadline_time, is_overdue, created_at, updated_at
+        ) values (
+            #{caseNumber}, #{title}, #{typeCode}, #{status},
+            #{reporterName}, #{reporterContact}, #{incidentTime}, #{incidentLocation},
+            #{briefDescription}, #{handlingOfficerId}, #{departmentId},
+            #{acceptanceTime}, #{deadlineTime}, #{isOverdue}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+
+    <select id="findById" resultMap="CaseRecordResult">
+        select <include refid="CaseSelectColumns" />
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        left join users u on u.id = c.handling_officer_id
+        left join departments dep on dep.id = c.department_id
+        where c.id = #{id}
+    </select>
+
+    <select id="findByCaseNumber" resultMap="CaseRecordResult">
+        select <include refid="CaseSelectColumns" />
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        left join users u on u.id = c.handling_officer_id
+        left join departments dep on dep.id = c.department_id
+        where c.case_number = #{caseNumber}
+    </select>
+
+    <select id="countCases" resultType="long">
+        select count(1)
+        from cases c
+        <where>
+            <if test="caseNumber != null and caseNumber != ''">
+                and c.case_number like concat('%', #{caseNumber}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                and c.title like concat('%', #{title}, '%')
+            </if>
+            <if test="typeCode != null and typeCode != ''">
+                and c.type_code = #{typeCode}
+            </if>
+            <if test="status != null and status != ''">
+                and c.status = #{status}
+            </if>
+            <if test="departmentId != null">
+                and c.department_id = #{departmentId}
+            </if>
+            <if test="handlingOfficerId != null">
+                and c.handling_officer_id = #{handlingOfficerId}
+            </if>
+            <if test="isOverdue != null">
+                and c.is_overdue = #{isOverdue}
+            </if>
+        </where>
+    </select>
+
+    <select id="findCasePage" resultMap="CaseRecordResult">
+        select <include refid="CaseSelectColumns" />
+        from cases c
+        left join dict_case_types dct on dct.code = c.type_code
+        left join users u on u.id = c.handling_officer_id
+        left join departments dep on dep.id = c.department_id
+        <where>
+            <if test="caseNumber != null and caseNumber != ''">
+                and c.case_number like concat('%', #{caseNumber}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                and c.title like concat('%', #{title}, '%')
+            </if>
+            <if test="typeCode != null and typeCode != ''">
+                and c.type_code = #{typeCode}
+            </if>
+            <if test="status != null and status != ''">
+                and c.status = #{status}
+            </if>
+            <if test="departmentId != null">
+                and c.department_id = #{departmentId}
+            </if>
+            <if test="handlingOfficerId != null">
+                and c.handling_officer_id = #{handlingOfficerId}
+            </if>
+            <if test="isOverdue != null">
+                and c.is_overdue = #{isOverdue}
+            </if>
+        </where>
+        order by c.id desc
+        limit #{offset}, #{size}
+    </select>
+
+    <update id="updateCase">
+        update cases
+        set title = #{title},
+            type_code = #{typeCode},
+            reporter_name = #{reporterName},
+            reporter_contact = #{reporterContact},
+            incident_time = #{incidentTime},
+            incident_location = #{incidentLocation},
+            brief_description = #{briefDescription},
+            department_id = #{departmentId},
+            deadline_time = #{deadlineTime},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="assignOfficer">
+        update cases
+        set handling_officer_id = #{handlingOfficerId},
+            department_id = #{departmentId},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateCaseStatus">
+        update cases
+        set status = #{status},
+            acceptance_time = #{acceptanceTime},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <insert id="insertProcess" useGeneratedKeys="true" keyProperty="id">
+        insert into case_processes (
+            case_id, from_status, to_status, operator_id, operation_time, comment, ip_address
+        ) values (
+            #{caseId}, #{fromStatus}, #{toStatus}, #{operatorId}, #{operationTime}, #{comment}, #{ipAddress}
+        )
+    </insert>
+
+    <select id="findProcessesByCaseId" resultMap="CaseProcessResult">
+        select cp.*, u.name as operator_name
+        from case_processes cp
+        left join users u on u.id = cp.operator_id
+        where cp.case_id = #{caseId}
+        order by cp.id desc
+    </select>
+
+    <insert id="insertEvidence" useGeneratedKeys="true" keyProperty="id">
+        insert into case_evidences (
+            case_id, file_name, file_path, file_type, file_size, upload_user_id, description, uploaded_at
+        ) values (
+            #{caseId}, #{fileName}, #{filePath}, #{fileType}, #{fileSize}, #{uploadUserId}, #{description}, #{uploadedAt}
+        )
+    </insert>
+
+    <select id="findEvidencesByCaseId" resultMap="CaseEvidenceResult">
+        select ce.*, u.name as upload_user_name
+        from case_evidences ce
+        left join users u on u.id = ce.upload_user_id
+        where ce.case_id = #{caseId}
+        order by ce.id desc
+    </select>
+
+</mapper>
+
