@@ -1,0 +1,315 @@
+-- Core schema for Public Order Case Management System
+-- MySQL 8+, InnoDB, utf8mb4
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS case_executions;
+DROP TABLE IF EXISTS case_decisions;
+DROP TABLE IF EXISTS case_legal_reviews;
+DROP TABLE IF EXISTS case_evidences;
+DROP TABLE IF EXISTS case_processes;
+DROP TABLE IF EXISTS cases;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS login_logs;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS dict_case_types;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS roles;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE roles (
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (code),
+    UNIQUE KEY uk_roles_name (name)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE departments (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(128) NOT NULL,
+    parent_id BIGINT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_departments_name (name),
+    KEY idx_departments_parent_id (parent_id),
+    CONSTRAINT fk_departments_parent
+        FOREIGN KEY (parent_id) REFERENCES departments (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE dict_case_types (
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (code),
+    KEY idx_dict_case_types_active_order (is_active, sort_order, code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE users (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    role VARCHAR(64) NOT NULL,
+    department_id BIGINT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    last_login DATETIME NULL,
+    login_attempts INT NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_users_name (name),
+    KEY idx_users_role (role),
+    KEY idx_users_department_id (department_id),
+    KEY idx_users_active (is_active),
+    CONSTRAINT fk_users_role
+        FOREIGN KEY (role) REFERENCES roles (code)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_users_department
+        FOREIGN KEY (department_id) REFERENCES departments (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE refresh_tokens (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    revoked TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at DATETIME NULL,
+    PRIMARY KEY (id),
+    KEY idx_refresh_tokens_hash_revoked (token_hash, revoked),
+    KEY idx_refresh_tokens_user_revoked (user_id, revoked),
+    KEY idx_refresh_tokens_expires_at (expires_at),
+    CONSTRAINT fk_refresh_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE login_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NULL,
+    name VARCHAR(64) NULL,
+    ip VARCHAR(45) NULL,
+    login_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    login_result TINYINT NOT NULL,
+    device_type VARCHAR(64) NULL,
+    browser VARCHAR(128) NULL,
+    os VARCHAR(128) NULL,
+    PRIMARY KEY (id),
+    KEY idx_login_logs_user_time (user_id, login_time),
+    KEY idx_login_logs_name_time (name, login_time),
+    CONSTRAINT fk_login_logs_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE cases (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_number VARCHAR(64) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    type_code VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    reporter_name VARCHAR(64) NOT NULL,
+    reporter_contact VARCHAR(64) NULL,
+    incident_time DATETIME NULL,
+    incident_location VARCHAR(255) NULL,
+    brief_description TEXT NULL,
+    handling_officer_id BIGINT NULL,
+    department_id BIGINT NULL,
+    acceptance_time DATETIME NULL,
+    deadline_time DATETIME NULL,
+    is_overdue TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cases_case_number (case_number),
+    KEY idx_cases_status (status),
+    KEY idx_cases_type_code (type_code),
+    KEY idx_cases_department_id (department_id),
+    KEY idx_cases_handling_officer_id (handling_officer_id),
+    KEY idx_cases_deadline_status (deadline_time, status),
+    KEY idx_cases_overdue_status (is_overdue, status),
+    KEY idx_cases_created_at (created_at),
+    CONSTRAINT fk_cases_type_code
+        FOREIGN KEY (type_code) REFERENCES dict_case_types (code)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cases_officer
+        FOREIGN KEY (handling_officer_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_cases_department
+        FOREIGN KEY (department_id) REFERENCES departments (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_processes (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    from_status VARCHAR(32) NULL,
+    to_status VARCHAR(32) NOT NULL,
+    operator_id BIGINT NULL,
+    operation_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `comment` VARCHAR(500) NULL,
+    ip_address VARCHAR(45) NULL,
+    PRIMARY KEY (id),
+    KEY idx_case_processes_case_id_id (case_id, id),
+    KEY idx_case_processes_case_to_status_id (case_id, to_status, id),
+    KEY idx_case_processes_operator_id (operator_id),
+    CONSTRAINT fk_case_processes_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_processes_operator
+        FOREIGN KEY (operator_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_evidences (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(512) NOT NULL,
+    file_type VARCHAR(128) NULL,
+    file_size BIGINT NULL,
+    upload_user_id BIGINT NULL,
+    description VARCHAR(500) NULL,
+    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_case_evidences_case_id_id (case_id, id),
+    KEY idx_case_evidences_upload_user_id (upload_user_id),
+    CONSTRAINT fk_case_evidences_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_evidences_upload_user
+        FOREIGN KEY (upload_user_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_legal_reviews (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    review_status VARCHAR(32) NOT NULL,
+    review_comment VARCHAR(1000) NULL,
+    reviewer_id BIGINT NULL,
+    reviewed_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_case_legal_reviews_case_id (case_id),
+    KEY idx_case_legal_reviews_status (review_status),
+    KEY idx_case_legal_reviews_reviewed_at (reviewed_at),
+    CONSTRAINT fk_case_legal_reviews_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_legal_reviews_reviewer
+        FOREIGN KEY (reviewer_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_decisions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    decision_result VARCHAR(64) NOT NULL,
+    decision_content VARCHAR(2000) NULL,
+    coercive_measure_code VARCHAR(64) NULL,
+    decided_by BIGINT NULL,
+    decided_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_case_decisions_case_id (case_id),
+    KEY idx_case_decisions_decided_at (decided_at),
+    KEY idx_case_decisions_decided_by (decided_by),
+    CONSTRAINT fk_case_decisions_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_decisions_decided_by
+        FOREIGN KEY (decided_by) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_executions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    execution_result VARCHAR(64) NOT NULL,
+    execution_note VARCHAR(1000) NULL,
+    executed_by BIGINT NULL,
+    executed_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_case_executions_case_id (case_id),
+    KEY idx_case_executions_executed_at (executed_at),
+    KEY idx_case_executions_executed_by (executed_by),
+    CONSTRAINT fk_case_executions_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_executions_executed_by
+        FOREIGN KEY (executed_by) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+-- Minimal seed data
+INSERT INTO roles (code, name, sort_order, is_active) VALUES
+    ('admin', 'Administrator', 1, 1),
+    ('supervisor', 'Supervisor', 2, 1),
+    ('legal_officer', 'Legal Officer', 3, 1),
+    ('police_officer', 'Police Officer', 4, 1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    sort_order = VALUES(sort_order),
+    is_active = VALUES(is_active);
+
+INSERT INTO departments (id, name, parent_id, is_active) VALUES
+    (1, 'Public Order Brigade', NULL, 1),
+    (2, 'Urban Patrol Unit', 1, 1),
+    (3, 'Legal Affairs Unit', 1, 1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    parent_id = VALUES(parent_id),
+    is_active = VALUES(is_active);
+
+INSERT INTO dict_case_types (code, name, sort_order, is_active) VALUES
+    ('PUBLIC_DISTURBANCE', 'Public Disturbance', 1, 1),
+    ('TRAFFIC_OBSTRUCTION', 'Traffic Obstruction', 2, 1),
+    ('UNLICENSED_BUSINESS', 'Unlicensed Business', 3, 1),
+    ('NOISE_COMPLAINT', 'Noise Complaint', 4, 1),
+    ('ILLEGAL_ASSEMBLY', 'Illegal Assembly', 5, 1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    sort_order = VALUES(sort_order),
+    is_active = VALUES(is_active);
+
+-- Default admin password (change after first login): Admin@123456
+-- BCrypt hash generated once and suitable for Spring Security PasswordEncoder
+INSERT INTO users (
+    id, password, name, role, department_id, is_active,
+    last_login, login_attempts, locked_until, created_at, updated_at
+) VALUES (
+    1,
+    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjQf8M2MvmP0xSg6u40qCMgfHdCqkfS',
+    'admin',
+    'admin',
+    1,
+    1,
+    NULL,
+    0,
+    NULL,
+    NOW(),
+    NOW()
+)
+ON DUPLICATE KEY UPDATE
+    password = VALUES(password),
+    role = VALUES(role),
+    department_id = VALUES(department_id),
+    is_active = VALUES(is_active),
+    updated_at = NOW();
