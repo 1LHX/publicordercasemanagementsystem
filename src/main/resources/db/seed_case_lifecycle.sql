@@ -244,4 +244,3 @@ ON DUPLICATE KEY UPDATE
     executed_by = VALUES(executed_by),
     executed_at = VALUES(executed_at),
     updated_at = VALUES(updated_at);
-
