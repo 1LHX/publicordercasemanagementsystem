@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+快速执行认证与基础受保护接口的冒烟检查。
+
+.DESCRIPTION
+覆盖注册(可选)、登录、/api/users/me、/api/users、字典查询、刷新令牌与登出。
+用于在本地开发阶段快速确认 API 主链路是否可用。
+
+.EXAMPLE
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-auth-user-dictionary.ps1 -TryRegister
+
+.EXAMPLE
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-auth-user-dictionary.ps1 -BaseUrl "http://localhost:8080" -UserName "smoke_user" -Password "P@ssw0rd123"
+#>
+
 param(
     [string]$BaseUrl = "http://localhost:8080",
     [string]$UserName = "smoke_user",
@@ -86,4 +101,5 @@ $logoutResp = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/auth/logout" -He
 Assert-ApiResponse $logoutResp "logout"
 
 Write-Host "`nSmoke API checks completed successfully." -ForegroundColor Green
+
 
