@@ -21,9 +21,4 @@ This module provides registration, login, refresh token, and logout APIs backed 
 2. Update `src/main/resources/application.properties` with your MySQL credentials and JWT secret.
 3. Run the application with Maven.
 
-## Auth Endpoints
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
+For endpoint details and request/response fields, use `docs/api/backend-api-reference.md` as the single source of truth.

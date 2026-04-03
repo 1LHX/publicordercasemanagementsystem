@@ -9,14 +9,9 @@
 
 ## `smoke-auth-user-dictionary.ps1`
 
-Quick smoke checks for auth + protected endpoints:
+该脚本用于快速校验认证链路与核心受保护接口可用性（登录、用户信息、字典查询、刷新、登出）。
 
-- login
-- `/api/users/me`
-- `/api/users`
-- `/api/dictionaries/case-types`
-- refresh token
-- logout
+接口字段与返回结构请以 `docs/api/backend-api-reference.md` 为准。
 
 ## Usage (PowerShell)
 
