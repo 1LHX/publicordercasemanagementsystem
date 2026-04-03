@@ -143,10 +143,15 @@ public class AuthServiceImpl implements AuthService {
         if (existing != null) {
             throw new AuthException(400, "Name already exists");
         }
+        String roleCode = request.getRole() == null || request.getRole().isBlank()
+                ? "police_officer" : request.getRole().trim();
+        if (userMapper.countActiveRoleByCode(roleCode) <= 0) {
+            throw new AuthException(400, "Invalid role code");
+        }
         User user = new User();
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
-        user.setRole(request.getRole() == null || request.getRole().isBlank() ? "police_officer" : request.getRole());
+        user.setRole(roleCode);
         user.setDepartmentId(request.getDepartmentId());
         user.setIsActive(true);
         user.setLoginAttempts(0);

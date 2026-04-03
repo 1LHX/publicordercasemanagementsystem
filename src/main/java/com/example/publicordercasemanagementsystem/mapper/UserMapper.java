@@ -21,6 +21,8 @@ public interface UserMapper {
 
     int unlockUser(Long id);
 
+    long countActiveRoleByCode(@Param("code") String code);
+
     long countByFilters(@Param("name") String name,
                         @Param("role") String role,
                         @Param("department") String department,

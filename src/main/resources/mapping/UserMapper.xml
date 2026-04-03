@@ -69,6 +69,12 @@
         where id = #{id}
     </update>
 
+    <select id="countActiveRoleByCode" resultType="long">
+        select count(1)
+        from roles
+        where code = #{code} and is_active = 1
+    </select>
+
     <select id="countByFilters" resultType="long">
         select count(1)
         from users u
