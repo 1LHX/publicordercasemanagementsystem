@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.RoleMapper">
+
+    <resultMap id="RoleResult" type="com.example.publicordercasemanagementsystem.pojo.Role">
+        <id column="code" property="code" />
+        <result column="name" property="name" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="is_active" property="isActive" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <select id="findByCode" resultMap="RoleResult">
+        select *
+        from roles
+        where code = #{code}
+    </select>
+
+    <select id="findAll" resultMap="RoleResult">
+        select *
+        from roles
+        <where>
+            <if test="isActive != null">
+                and is_active = #{isActive}
+            </if>
+        </where>
+        order by sort_order asc, code asc
+    </select>
+
+    <insert id="insert">
+        insert into roles (code, name, sort_order, is_active, created_at, updated_at)
+        values (#{code}, #{name}, #{sortOrder}, #{isActive}, now(), now())
+    </insert>
+
+    <update id="updateByCode">
+        update roles
+        set name = #{name},
+            sort_order = #{sortOrder},
+            updated_at = now()
+        where code = #{code}
+    </update>
+
+    <update id="updateActiveByCode">
+        update roles
+        set is_active = #{isActive},
+            updated_at = now()
+        where code = #{code}
+    </update>
+
+    <delete id="deleteByCode">
+        delete from roles
+        where code = #{code}
+    </delete>
+
+    <select id="countUsersByRoleCode" resultType="long">
+        select count(1)
+        from users
+        where role = #{code}
+    </select>
+
+</mapper>
+

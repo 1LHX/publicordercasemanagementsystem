@@ -23,6 +23,18 @@ public interface UserMapper {
 
     long countActiveRoleByCode(@Param("code") String code);
 
+    long countByNameExcludeId(@Param("name") String name, @Param("excludeId") Long excludeId);
+
+    int updateNameById(@Param("id") Long id, @Param("name") String name);
+
+    int updatePasswordById(@Param("id") Long id, @Param("password") String password);
+
+    int updateRoleById(@Param("id") Long id, @Param("role") String role);
+
+    int updateActiveById(@Param("id") Long id, @Param("isActive") Boolean isActive);
+
+    int deleteById(@Param("id") Long id);
+
     long countByFilters(@Param("name") String name,
                         @Param("role") String role,
                         @Param("department") String department,

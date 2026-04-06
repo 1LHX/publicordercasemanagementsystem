@@ -1,15 +1,23 @@
 package com.example.publicordercasemanagementsystem.service.impl;
 
+import com.example.publicordercasemanagementsystem.dto.ChangePasswordRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
+import com.example.publicordercasemanagementsystem.dto.UpdateUserNameRequest;
+import com.example.publicordercasemanagementsystem.dto.UpdateUserRoleRequest;
+import com.example.publicordercasemanagementsystem.dto.UpdateUserStatusRequest;
 import com.example.publicordercasemanagementsystem.dto.UserInfo;
 import com.example.publicordercasemanagementsystem.dto.UserListItem;
+import com.example.publicordercasemanagementsystem.exception.AuthException;
+import com.example.publicordercasemanagementsystem.mapper.RefreshTokenMapper;
 import com.example.publicordercasemanagementsystem.mapper.UserMapper;
 import com.example.publicordercasemanagementsystem.pojo.User;
 import com.example.publicordercasemanagementsystem.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -18,10 +26,19 @@ public class UserServiceImpl implements UserService {
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_SIZE = 100;
 
-    private final UserMapper userMapper;
+    private static final String ADMIN_ROLE = "admin";
+    private static final String PERMISSION_DENIED_MESSAGE = "当前角色无此操作权限。";
 
-    public UserServiceImpl(UserMapper userMapper) {
+    private final UserMapper userMapper;
+    private final RefreshTokenMapper refreshTokenMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserServiceImpl(UserMapper userMapper,
+                           RefreshTokenMapper refreshTokenMapper,
+                           PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
+        this.refreshTokenMapper = refreshTokenMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -56,6 +73,96 @@ public class UserServiceImpl implements UserService {
         }
         User user = userMapper.findByName(name);
         return user == null ? null : toUserInfo(user);
+    }
+
+    @Override
+    public UserInfo updateUserName(Long id, UpdateUserNameRequest request, String operatorName) {
+        User operator = requireAdmin(operatorName);
+        User target = requireUserById(id);
+
+        if (operator.getId().equals(id)) {
+            throw new AuthException(400, "Current operator cannot rename itself");
+        }
+
+        String newName = request.getName().trim();
+        if (userMapper.countByNameExcludeId(newName, id) > 0) {
+            throw new AuthException(400, "Name already exists");
+        }
+        userMapper.updateNameById(id, newName);
+
+        // Refresh tokens should be revoked when the identity claim(name) changes.
+        if (!newName.equals(target.getName())) {
+            refreshTokenMapper.revokeByUserId(id);
+        }
+        return toUserInfo(requireUserById(id));
+    }
+
+    @Override
+    public void changeUserPassword(Long id, ChangePasswordRequest request, String operatorName) {
+        requireAdmin(operatorName);
+        requireUserById(id);
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new AuthException(400, "Passwords do not match");
+        }
+        userMapper.updatePasswordById(id, passwordEncoder.encode(request.getPassword()));
+        refreshTokenMapper.revokeByUserId(id);
+    }
+
+    @Override
+    public UserInfo updateUserRole(Long id, UpdateUserRoleRequest request, String operatorName) {
+        requireAdmin(operatorName);
+        requireUserById(id);
+
+        String roleCode = request.getRole().trim().toLowerCase(Locale.ROOT);
+        if (userMapper.countActiveRoleByCode(roleCode) <= 0) {
+            throw new AuthException(400, "Invalid role code");
+        }
+        userMapper.updateRoleById(id, roleCode);
+        refreshTokenMapper.revokeByUserId(id);
+        return toUserInfo(requireUserById(id));
+    }
+
+    @Override
+    public UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, String operatorName) {
+        User operator = requireAdmin(operatorName);
+        requireUserById(id);
+
+        if (operator.getId().equals(id) && !Boolean.TRUE.equals(request.getIsActive())) {
+            throw new AuthException(400, "Current operator cannot disable itself");
+        }
+
+        userMapper.updateActiveById(id, request.getIsActive());
+        if (!Boolean.TRUE.equals(request.getIsActive())) {
+            refreshTokenMapper.revokeByUserId(id);
+        }
+        return toUserInfo(requireUserById(id));
+    }
+
+    @Override
+    public void deleteUser(Long id, String operatorName) {
+        User operator = requireAdmin(operatorName);
+        requireUserById(id);
+
+        if (operator.getId().equals(id)) {
+            throw new AuthException(400, "Current operator cannot delete itself");
+        }
+        userMapper.deleteById(id);
+    }
+
+    private User requireAdmin(String operatorName) {
+        User operator = userMapper.findByName(operatorName);
+        if (operator == null || !ADMIN_ROLE.equals(operator.getRole())) {
+            throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
+        }
+        return operator;
+    }
+
+    private User requireUserById(Long id) {
+        User user = userMapper.findById(id);
+        if (user == null) {
+            throw new AuthException(404, "User not found");
+        }
+        return user;
     }
 
     private UserListItem toListItem(User user) {

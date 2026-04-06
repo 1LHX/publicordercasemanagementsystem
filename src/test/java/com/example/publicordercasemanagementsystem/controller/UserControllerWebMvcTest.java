@@ -15,14 +15,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,5 +97,52 @@ class UserControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.name").value("alice"));
+    }
+
+    @Test
+    void updateUserRoleShouldReturnUpdatedUser() throws Exception {
+        UserInfo userInfo = new UserInfo();
+        userInfo.setId(7L);
+        userInfo.setName("bob");
+        userInfo.setRole("supervisor");
+        when(userService.updateUserRole(eq(7L), any(), eq("admin"))).thenReturn(userInfo);
+
+        mockMvc.perform(put("/api/users/7/role")
+                        .with(authenticatedUser("admin"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"role\":\"supervisor\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User role updated successfully"))
+                .andExpect(jsonPath("$.data.role").value("supervisor"));
+    }
+
+    @Test
+    void changePasswordShouldReturnSuccessMessage() throws Exception {
+        doNothing().when(userService).changeUserPassword(eq(9L), any(), eq("admin"));
+
+        mockMvc.perform(put("/api/users/9/password")
+                        .with(authenticatedUser("admin"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"password\":\"NewPass@123\",\"confirmPassword\":\"NewPass@123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User password updated successfully"));
+    }
+
+    @Test
+    void deleteUserShouldReturnSuccessMessage() throws Exception {
+        doNothing().when(userService).deleteUser(eq(9L), eq("admin"));
+
+        mockMvc.perform(delete("/api/users/9").with(authenticatedUser("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User deleted successfully"));
+    }
+
+    private RequestPostProcessor authenticatedUser(String userName) {
+        return request -> {
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+            );
+            return request;
+        };
     }
 }

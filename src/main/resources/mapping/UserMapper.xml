@@ -75,6 +75,46 @@
         where code = #{code} and is_active = 1
     </select>
 
+    <select id="countByNameExcludeId" resultType="long">
+        select count(1)
+        from users
+        where name = #{name}
+          and id &lt;&gt; #{excludeId}
+    </select>
+
+    <update id="updateNameById">
+        update users
+        set name = #{name},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updatePasswordById">
+        update users
+        set password = #{password},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateRoleById">
+        update users
+        set role = #{role},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateActiveById">
+        update users
+        set is_active = #{isActive},
+            updated_at = now()
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete from users
+        where id = #{id}
+    </delete>
+
     <select id="countByFilters" resultType="long">
         select count(1)
         from users u
