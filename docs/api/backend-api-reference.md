@@ -174,7 +174,69 @@ Authorization: Bearer <access_token>
 
 ---
 
-## 5.1 Role APIs (`/api/roles`)
+## 5.1 Department APIs (`/api/departments`)
+
+Departments are an organizational tree used by `users.department_id` and `cases.department_id`.
+
+### GET `/api/departments`
+- Auth: required
+- Query (all optional):
+  - `name` (string)
+  - `isActive` (boolean)
+  - `parentId` (number)
+- Response: `ApiResponse<List<DepartmentItem>>`
+
+### GET `/api/departments/{id}`
+- Auth: required
+- Path: `id` (number)
+- Response: `ApiResponse<DepartmentItem>`
+
+### POST `/api/departments`
+- Auth: required (`admin` only)
+- Body (`CreateDepartmentRequest`):
+  - `name` (string, required)
+  - `parentId` (number, optional)
+- Response: `ApiResponse<DepartmentItem>`
+- Success message: `Department created successfully`
+- Notes:
+  - Department name must be unique.
+  - Parent department must exist and be active.
+
+### PUT `/api/departments/{id}`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`UpdateDepartmentRequest`):
+  - `name` (string, required)
+  - `parentId` (number, optional)
+- Response: `ApiResponse<DepartmentItem>`
+- Success message: `Department updated successfully`
+- Notes:
+  - Department name must be unique.
+  - Parent cannot be self or create a hierarchy cycle.
+
+### PUT `/api/departments/{id}/status`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`UpdateDepartmentStatusRequest`):
+  - `isActive` (boolean, required)
+- Response: `ApiResponse<DepartmentItem>`
+- Success message: `Department status updated successfully`
+- Notes:
+  - Inactive parent departments cannot be used as a parent.
+  - Department with users/cases/child departments cannot be disabled.
+
+### DELETE `/api/departments/{id}`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body: none
+- Response: `ApiResponse<Void>`
+- Success message: `Department deleted successfully`
+- Notes:
+  - Department with users/cases/child departments cannot be deleted.
+
+---
+
+## 5.2 Role APIs (`/api/roles`)
 
 ### GET `/api/roles`
 - Auth: required
