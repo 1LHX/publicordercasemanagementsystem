@@ -117,6 +117,116 @@ Authorization: Bearer <access_token>
 - Notes:
   - User identity comes from current JWT principal (`authentication.getName()`).
 
+### PUT `/api/users/{id}/name`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`UpdateUserNameRequest`):
+  - `name` (string, required)
+- Response: `ApiResponse<UserInfo>`
+- Success message: `User name updated successfully`
+- Notes:
+  - Duplicate name will fail with `code=400`.
+  - Target user's refresh tokens are revoked when name changes.
+
+### PUT `/api/users/{id}/password`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`ChangePasswordRequest`):
+  - `password` (string, required)
+  - `confirmPassword` (string, required)
+- Response: `ApiResponse<Void>`
+- Success message: `User password updated successfully`
+- Notes:
+  - Passwords must match.
+  - Target user's refresh tokens are revoked after password update.
+
+### PUT `/api/users/{id}/role`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`UpdateUserRoleRequest`):
+  - `role` (string, required, role code)
+- Response: `ApiResponse<UserInfo>`
+- Success message: `User role updated successfully`
+- Notes:
+  - Role code must exist and be active.
+  - Target user's refresh tokens are revoked after role update.
+
+### PUT `/api/users/{id}/status`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body (`UpdateUserStatusRequest`):
+  - `isActive` (boolean, required)
+- Response: `ApiResponse<UserInfo>`
+- Success message: `User status updated successfully`
+- Notes:
+  - `admin` cannot disable itself.
+  - Target user's refresh tokens are revoked when disabled.
+
+### DELETE `/api/users/{id}`
+- Auth: required (`admin` only)
+- Path: `id` (number)
+- Body: none
+- Response: `ApiResponse<Void>`
+- Success message: `User deleted successfully`
+- Notes:
+  - `admin` cannot delete itself.
+  - This is account deletion, not token logout.
+
+---
+
+## 5.1 Role APIs (`/api/roles`)
+
+### GET `/api/roles`
+- Auth: required
+- Query (optional):
+  - `isActive` (boolean)
+- Response: `ApiResponse<List<RoleItem>>`
+
+### GET `/api/roles/{code}`
+- Auth: required
+- Path: `code` (string)
+- Response: `ApiResponse<RoleItem>`
+
+### POST `/api/roles`
+- Auth: required (`admin` only)
+- Body (`CreateRoleRequest`):
+  - `code` (string, required)
+  - `name` (string, required)
+  - `sortOrder` (number, optional, default `0`)
+  - `isActive` (boolean, optional, default `true`)
+- Response: `ApiResponse<RoleItem>`
+- Success message: `Role created successfully`
+
+### PUT `/api/roles/{code}`
+- Auth: required (`admin` only)
+- Path: `code` (string)
+- Body (`UpdateRoleRequest`):
+  - `name` (string, required)
+  - `sortOrder` (number, optional)
+- Response: `ApiResponse<RoleItem>`
+- Success message: `Role updated successfully`
+
+### PUT `/api/roles/{code}/status`
+- Auth: required (`admin` only)
+- Path: `code` (string)
+- Body (`UpdateRoleStatusRequest`):
+  - `isActive` (boolean, required)
+- Response: `ApiResponse<RoleItem>`
+- Success message: `Role status updated successfully`
+- Notes:
+  - `admin` role cannot be disabled.
+  - Role in use by users cannot be disabled.
+
+### DELETE `/api/roles/{code}`
+- Auth: required (`admin` only)
+- Path: `code` (string)
+- Body: none
+- Response: `ApiResponse<Void>`
+- Success message: `Role deleted successfully`
+- Notes:
+  - `admin` role cannot be deleted.
+  - Role in use by users cannot be deleted.
+
 ---
 
 ## 6. Case APIs (`/api/cases`)
