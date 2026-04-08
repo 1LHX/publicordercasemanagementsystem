@@ -365,6 +365,16 @@ Departments are an organizational tree used by `users.department_id` and `cases.
 - Response: `ApiResponse<CaseDetailResponse>`
 - Success message: `Case updated successfully`
 
+### DELETE `/api/cases/{id}`
+- Auth: required
+- Path: `id` (number)
+- Body: none
+- Response: `ApiResponse<Void>`
+- Success message: `Case deleted successfully`
+- Notes:
+  - This is a hard delete.
+  - Deleting a case will cascade delete `case_processes`, `case_evidences`, `case_legal_reviews`, `case_decisions`, and `case_executions` because the database foreign keys use `ON DELETE CASCADE`.
+
 ### POST `/api/cases/{id}/accept`
 - Auth: required
 - Path: `id` (number)
@@ -410,6 +420,29 @@ Departments are an organizational tree used by `users.department_id` and `cases.
 - Auth: required
 - Path: `id` (number)
 - Response: `ApiResponse<List<CaseEvidenceItem>>`
+
+### PUT `/api/cases/{caseId}/evidences/{evidenceId}`
+- Auth: required
+- Path: `caseId` (number), `evidenceId` (number)
+- Body (`UpdateEvidenceRequest`):
+  - `fileName` (string, required)
+  - `filePath` (string, required)
+  - `fileType` (string, optional)
+  - `fileSize` (number, optional)
+  - `description` (string, optional)
+- Response: `ApiResponse<CaseEvidenceItem>`
+- Success message: `Evidence updated successfully`
+- Notes:
+  - `evidenceId` must belong to the specified `caseId`.
+
+### DELETE `/api/cases/{caseId}/evidences/{evidenceId}`
+- Auth: required
+- Path: `caseId` (number), `evidenceId` (number)
+- Body: none
+- Response: `ApiResponse<Void>`
+- Success message: `Evidence deleted successfully`
+- Notes:
+  - `evidenceId` must belong to the specified `caseId`.
 
 ### POST `/api/cases/{id}/legal-review/submit`
 - Auth: required

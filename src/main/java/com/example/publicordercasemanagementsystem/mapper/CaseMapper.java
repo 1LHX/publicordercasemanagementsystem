@@ -15,6 +15,8 @@ public interface CaseMapper {
 
     int insertCase(CaseRecord record);
 
+    int deleteCase(Long id);
+
     CaseRecord findById(Long id);
 
     CaseRecord findByCaseNumber(String caseNumber);
@@ -68,6 +70,14 @@ public interface CaseMapper {
     CaseProcess findLatestArchiveProcessByCaseId(Long caseId);
 
     int insertEvidence(CaseEvidence evidence);
+
+    CaseEvidence findEvidenceById(@Param("evidenceId") Long evidenceId);
+
+    CaseEvidence findEvidenceByIdAndCaseId(@Param("caseId") Long caseId, @Param("evidenceId") Long evidenceId);
+
+    int updateEvidence(CaseEvidence evidence);
+
+    int deleteEvidence(@Param("evidenceId") Long evidenceId);
 
     List<CaseEvidence> findEvidencesByCaseId(Long caseId);
 

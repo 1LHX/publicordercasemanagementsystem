@@ -16,6 +16,7 @@ import com.example.publicordercasemanagementsystem.dto.PageResult;
 import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
 import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
+import com.example.publicordercasemanagementsystem.dto.UpdateEvidenceRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
 import com.example.publicordercasemanagementsystem.service.CaseService;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -108,6 +110,12 @@ public class CaseController {
         return ResponseEntity.ok(ApiResponse.ok(caseService.updateCase(id, request), "Case updated successfully"));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCase(@PathVariable Long id) {
+        caseService.deleteCase(id, getCurrentUserName());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Case deleted successfully"));
+    }
+
     @PostMapping("/{id}/accept")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> acceptCase(@PathVariable Long id,
                                                                       HttpServletRequest httpRequest) {
@@ -141,6 +149,21 @@ public class CaseController {
                                                                      @Valid @RequestBody CreateEvidenceRequest request) {
         CaseEvidenceItem response = caseService.addEvidence(id, request, getCurrentUserName());
         return ResponseEntity.ok(ApiResponse.ok(response, "Evidence added successfully"));
+    }
+
+    @PutMapping("/{caseId}/evidences/{evidenceId}")
+    public ResponseEntity<ApiResponse<CaseEvidenceItem>> updateEvidence(@PathVariable Long caseId,
+                                                                        @PathVariable Long evidenceId,
+                                                                        @Valid @RequestBody UpdateEvidenceRequest request) {
+        CaseEvidenceItem response = caseService.updateEvidence(caseId, evidenceId, request, getCurrentUserName());
+        return ResponseEntity.ok(ApiResponse.ok(response, "Evidence updated successfully"));
+    }
+
+    @DeleteMapping("/{caseId}/evidences/{evidenceId}")
+    public ResponseEntity<ApiResponse<Void>> deleteEvidence(@PathVariable Long caseId,
+                                                            @PathVariable Long evidenceId) {
+        caseService.deleteEvidence(caseId, evidenceId, getCurrentUserName());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Evidence deleted successfully"));
     }
 
     @GetMapping("/{id}/evidences")

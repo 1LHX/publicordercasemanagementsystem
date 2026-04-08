@@ -15,6 +15,7 @@ import com.example.publicordercasemanagementsystem.dto.PageResult;
 import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
 import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
+import com.example.publicordercasemanagementsystem.dto.UpdateEvidenceRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -46,6 +47,8 @@ public interface CaseService {
 
     CaseDetailResponse updateCase(Long id, UpdateCaseRequest request);
 
+    void deleteCase(Long id, String operatorName);
+
     CaseDetailResponse acceptCase(Long id, String operatorName, HttpServletRequest httpRequest);
 
     CaseDetailResponse assignCase(Long id, AssignCaseRequest request, String operatorName, HttpServletRequest httpRequest);
@@ -57,6 +60,10 @@ public interface CaseService {
     CaseEvidenceItem addEvidence(Long id, CreateEvidenceRequest request, String operatorName);
 
     List<CaseEvidenceItem> listEvidences(Long id);
+
+    CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, String operatorName);
+
+    void deleteEvidence(Long caseId, Long evidenceId, String operatorName);
 
     CaseDetailResponse submitLegalReview(Long id,
                                          LegalReviewSubmitRequest request,

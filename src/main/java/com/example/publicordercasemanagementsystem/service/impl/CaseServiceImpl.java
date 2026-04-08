@@ -15,6 +15,7 @@ import com.example.publicordercasemanagementsystem.dto.PageResult;
 import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
 import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
+import com.example.publicordercasemanagementsystem.dto.UpdateEvidenceRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
 import com.example.publicordercasemanagementsystem.mapper.CaseMapper;
@@ -205,6 +206,13 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
+    public void deleteCase(Long id, String operatorName) {
+        requireOperator(operatorName);
+        requireCase(id);
+        caseMapper.deleteCase(id);
+    }
+
+    @Override
     public CaseDetailResponse acceptCase(Long id, String operatorName, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         caseMapper.updateCaseStatus(id, STATUS_ACCEPTED, LocalDateTime.now());
@@ -286,6 +294,28 @@ public class CaseServiceImpl implements CaseService {
             items.add(toEvidenceItem(evidence));
         }
         return items;
+    }
+
+    @Override
+    public CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, String operatorName) {
+        requireOperator(operatorName);
+        requireCase(caseId);
+        CaseEvidence evidence = requireEvidence(caseId, evidenceId);
+        evidence.setFileName(request.getFileName());
+        evidence.setFilePath(request.getFilePath());
+        evidence.setFileType(request.getFileType());
+        evidence.setFileSize(request.getFileSize());
+        evidence.setDescription(request.getDescription());
+        caseMapper.updateEvidence(evidence);
+        return toEvidenceItem(requireEvidence(caseId, evidenceId));
+    }
+
+    @Override
+    public void deleteEvidence(Long caseId, Long evidenceId, String operatorName) {
+        requireOperator(operatorName);
+        requireCase(caseId);
+        requireEvidence(caseId, evidenceId);
+        caseMapper.deleteEvidence(evidenceId);
     }
 
     @Override
@@ -486,6 +516,14 @@ public class CaseServiceImpl implements CaseService {
             throw new AuthException(404, "Case not found");
         }
         return record;
+    }
+
+    private CaseEvidence requireEvidence(Long caseId, Long evidenceId) {
+        CaseEvidence evidence = caseMapper.findEvidenceByIdAndCaseId(caseId, evidenceId);
+        if (evidence == null) {
+            throw new AuthException(404, "Evidence not found");
+        }
+        return evidence;
     }
 
     private void requireStatus(CaseRecord record, String expectedStatus, String message) {

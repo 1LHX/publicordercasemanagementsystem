@@ -84,6 +84,11 @@
         )
     </insert>
 
+    <delete id="deleteCase">
+        delete from cases
+        where id = #{id}
+    </delete>
+
     <select id="findById" resultMap="CaseRecordResult">
         select <include refid="CaseSelectColumns" />
         from cases c
@@ -281,6 +286,36 @@
             #{caseId}, #{fileName}, #{filePath}, #{fileType}, #{fileSize}, #{uploadUserId}, #{description}, #{uploadedAt}
         )
     </insert>
+
+    <select id="findEvidenceById" resultMap="CaseEvidenceResult">
+        select ce.*, u.name as upload_user_name
+        from case_evidences ce
+        left join users u on u.id = ce.upload_user_id
+        where ce.id = #{evidenceId}
+    </select>
+
+    <select id="findEvidenceByIdAndCaseId" resultMap="CaseEvidenceResult">
+        select ce.*, u.name as upload_user_name
+        from case_evidences ce
+        left join users u on u.id = ce.upload_user_id
+        where ce.id = #{evidenceId}
+          and ce.case_id = #{caseId}
+    </select>
+
+    <update id="updateEvidence">
+        update case_evidences
+        set file_name = #{fileName},
+            file_path = #{filePath},
+            file_type = #{fileType},
+            file_size = #{fileSize},
+            description = #{description}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteEvidence">
+        delete from case_evidences
+        where id = #{evidenceId}
+    </delete>
 
     <select id="findEvidencesByCaseId" resultMap="CaseEvidenceResult">
         select ce.*, u.name as upload_user_name

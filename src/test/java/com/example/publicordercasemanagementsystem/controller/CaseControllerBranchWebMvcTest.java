@@ -222,6 +222,26 @@ class CaseControllerBranchWebMvcTest {
     }
 
     @Test
+    void deleteCaseShouldReturnOk() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101")
+                        .with(authenticatedUser("alice")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("Case deleted successfully"));
+    }
+
+    @Test
+    void deleteCaseShouldReturnBusinessError() throws Exception {
+        org.mockito.Mockito.doThrow(new AuthException(404, "Case not found"))
+                .when(caseService).deleteCase(eq(101L), eq("alice"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101")
+                        .with(authenticatedUser("alice")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
+    }
+
+    @Test
     void transitionStatusShouldReturn401WhenUnauthenticated() throws Exception {
         mockMvc.perform(post("/api/cases/101/status-transitions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -303,6 +323,30 @@ class CaseControllerBranchWebMvcTest {
                         .content(validEvidenceRequest()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409));
+    }
+
+    @Test
+    void updateEvidenceShouldReturnOk() throws Exception {
+        CaseEvidenceItem item = new CaseEvidenceItem();
+        item.setId(11L);
+        when(caseService.updateEvidence(eq(101L), eq(11L), any(), eq("alice"))).thenReturn(item);
+
+        mockMvc.perform(put("/api/cases/101/evidences/11")
+                        .with(authenticatedUser("alice"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validUpdateEvidenceRequest()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("Evidence updated successfully"));
+    }
+
+    @Test
+    void deleteEvidenceShouldReturnOk() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101/evidences/11")
+                        .with(authenticatedUser("alice")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("Evidence deleted successfully"));
     }
 
     @Test
@@ -545,6 +589,16 @@ class CaseControllerBranchWebMvcTest {
                 {
                   "fileName": "video.mp4",
                   "filePath": "/evidence/video.mp4"
+                }
+                """;
+    }
+
+    private String validUpdateEvidenceRequest() {
+        return """
+                {
+                  "fileName": "updated-video.mp4",
+                  "filePath": "/evidence/updated-video.mp4",
+                  "description": "updated"
                 }
                 """;
     }
