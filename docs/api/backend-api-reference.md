@@ -444,6 +444,131 @@ Departments are an organizational tree used by `users.department_id` and `cases.
 - Notes:
   - `evidenceId` must belong to the specified `caseId`.
 
+## 6.1 Frontend usage examples and permission suggestions
+
+角色码与中文展示名对应关系：
+- `police_officer` → 民警
+- `legal_officer` → 法制员
+- `supervisor` → 主管
+- `admin` → 管理员
+
+### Permission matrix suggestion
+
+> 说明：下表是前端联动建议，便于控制按钮可见/可点/可执行；真正的数据安全仍以后端返回为准。
+
+| 操作 | 民警 | 法制员 | 主管 | 管理员 |
+| --- | --- | --- | --- | --- |
+| 案件删除 `DELETE /api/cases/{id}` | 隐藏 | 隐藏 | 隐藏 | 显示 / 可点 / 可执行 |
+| 证据修改 `PUT /api/cases/{caseId}/evidences/{evidenceId}` | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 |
+| 证据删除 `DELETE /api/cases/{caseId}/evidences/{evidenceId}` | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 |
+
+建议：
+- 案件删除前务必二次确认，因为这是硬删，且会级联删除该案件下的流程、证据与后续记录。
+- 证据修改/删除前，前端应先检查当前案件是否处于允许编辑的状态；如果已归档，可仅对管理员开放。
+- 若后端返回 `403`，前端应直接禁用或隐藏对应按钮，而不是继续弹窗提交。
+
+### 1) 案件删除示例
+
+#### Request
+
+```http
+DELETE /api/cases/101
+Authorization: Bearer <access_token>
+```
+
+#### Response
+
+```json
+{
+  "code": 200,
+  "message": "Case deleted successfully",
+  "data": null
+}
+```
+
+#### Frontend pseudo code
+
+```ts
+await api.delete(`/api/cases/${caseId}`)
+```
+
+### 2) 证据修改示例
+
+#### Request
+
+```http
+PUT /api/cases/101/evidences/1001
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "fileName": "现场视频-修订版.mp4",
+  "filePath": "/files/evidence/现场视频-修订版.mp4",
+  "fileType": "video/mp4",
+  "fileSize": 10485760,
+  "description": "补充了清晰版本"
+}
+```
+
+#### Response
+
+```json
+{
+  "code": 200,
+  "message": "Evidence updated successfully",
+  "data": {
+    "id": 1001,
+    "caseId": 101,
+    "fileName": "现场视频-修订版.mp4",
+    "filePath": "/files/evidence/现场视频-修订版.mp4",
+    "fileType": "video/mp4",
+    "fileSize": 10485760,
+    "uploadUserId": 12,
+    "uploadUserName": "张三",
+    "description": "补充了清晰版本",
+    "uploadedAt": "2026-04-08T10:30:00"
+  }
+}
+```
+
+#### Frontend pseudo code
+
+```ts
+await api.put(`/api/cases/${caseId}/evidences/${evidenceId}`, payload)
+```
+
+### 3) 证据删除示例
+
+#### Request
+
+```http
+DELETE /api/cases/101/evidences/1001
+Authorization: Bearer <access_token>
+```
+
+#### Response
+
+```json
+{
+  "code": 200,
+  "message": "Evidence deleted successfully",
+  "data": null
+}
+```
+
+#### Frontend pseudo code
+
+```ts
+await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
+```
+
+### Error handling tips for frontend
+
+- `400`：参数校验失败或业务规则不满足，直接展示后端 message。
+- `403`：当前角色无权限，建议禁用按钮或隐藏入口，并提示“当前角色无此操作权限”。
+- `404`：案件或证据不存在，提示后刷新列表或返回上一层。
+- 删除类操作成功后，建议刷新案件详情与证据列表，避免页面残留旧数据。
+
 ### POST `/api/cases/{id}/legal-review/submit`
 - Auth: required
 - Path: `id` (number)
