@@ -23,11 +23,25 @@ public interface CaseWorkflowService {
                                          String idempotencyKey,
                                          HttpServletRequest httpRequest);
 
+    WorkflowInstanceResponse approveCaseWorkflow(Long caseId,
+                                                 String flowType,
+                                                 WorkflowActionRequest request,
+                                                 String operatorName,
+                                                 String idempotencyKey,
+                                                 HttpServletRequest httpRequest);
+
     WorkflowInstanceResponse rejectTask(Long taskId,
                                         WorkflowActionRequest request,
                                         String operatorName,
                                         String idempotencyKey,
                                         HttpServletRequest httpRequest);
+
+    WorkflowInstanceResponse rejectCaseWorkflow(Long caseId,
+                                                String flowType,
+                                                WorkflowActionRequest request,
+                                                String operatorName,
+                                                String idempotencyKey,
+                                                HttpServletRequest httpRequest);
 
     WorkflowInstanceResponse getInstance(Long instanceId);
 

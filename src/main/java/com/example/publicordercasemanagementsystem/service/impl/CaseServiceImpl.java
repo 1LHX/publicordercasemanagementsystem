@@ -14,9 +14,11 @@ import com.example.publicordercasemanagementsystem.dto.LegalReviewSubmitRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
 import com.example.publicordercasemanagementsystem.dto.RecordExecutionRequest;
 import com.example.publicordercasemanagementsystem.dto.SaveDecisionRequest;
+import com.example.publicordercasemanagementsystem.dto.StartCaseWorkflowRequest;
 import com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateEvidenceRequest;
 import com.example.publicordercasemanagementsystem.dto.UpdateCaseRequest;
+import com.example.publicordercasemanagementsystem.dto.WorkflowActionRequest;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
 import com.example.publicordercasemanagementsystem.mapper.CaseMapper;
 import com.example.publicordercasemanagementsystem.mapper.UserMapper;
@@ -28,6 +30,7 @@ import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import com.example.publicordercasemanagementsystem.pojo.CaseRecord;
 import com.example.publicordercasemanagementsystem.pojo.User;
 import com.example.publicordercasemanagementsystem.service.CaseService;
+import com.example.publicordercasemanagementsystem.service.CaseWorkflowService;
 import com.example.publicordercasemanagementsystem.util.RequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -60,10 +63,14 @@ public class CaseServiceImpl implements CaseService {
 
     private final CaseMapper caseMapper;
     private final UserMapper userMapper;
+    private final CaseWorkflowService caseWorkflowService;
 
-    public CaseServiceImpl(CaseMapper caseMapper, UserMapper userMapper) {
+    public CaseServiceImpl(CaseMapper caseMapper,
+                           UserMapper userMapper,
+                           CaseWorkflowService caseWorkflowService) {
         this.caseMapper = caseMapper;
         this.userMapper = userMapper;
+        this.caseWorkflowService = caseWorkflowService;
     }
 
     @Override
@@ -323,24 +330,14 @@ public class CaseServiceImpl implements CaseService {
                                                 LegalReviewSubmitRequest request,
                                                 String operatorName,
                                                 HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        requireStatus(record, STATUS_INVESTIGATING, "Case must be INVESTIGATING before legal review submission");
-
-        User operator = requireOperator(operatorName);
-        LocalDateTime now = LocalDateTime.now();
-
-        CaseLegalReview review = new CaseLegalReview();
-        review.setCaseId(id);
-        review.setReviewStatus(REVIEW_SUBMITTED);
-        review.setReviewComment(request.getComment());
-        review.setReviewerId(operator.getId());
-        review.setReviewedAt(now);
-        review.setCreatedAt(now);
-        review.setUpdatedAt(now);
-        caseMapper.upsertLegalReview(review);
-
-        caseMapper.updateCaseStatus(id, STATUS_LEGAL_REVIEW, record.getAcceptanceTime());
-        addProcess(id, record.getStatus(), STATUS_LEGAL_REVIEW, operatorName, request.getComment(), httpRequest);
+        StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
+        workflowRequest.setComment(request.getComment());
+        caseWorkflowService.startCaseWorkflow(id,
+                "LEGAL_AUDIT_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 
@@ -349,28 +346,14 @@ public class CaseServiceImpl implements CaseService {
                                                  LegalReviewApproveRequest request,
                                                  String operatorName,
                                                  HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW to approve legal review");
-
-        CaseLegalReview existing = caseMapper.findLegalReviewByCaseId(id);
-        if (existing == null || !REVIEW_SUBMITTED.equals(existing.getReviewStatus())) {
-            throw new AuthException(400, "Legal review is not in submitted state");
-        }
-
-        User operator = requireOperator(operatorName);
-        LocalDateTime now = LocalDateTime.now();
-
-        CaseLegalReview review = new CaseLegalReview();
-        review.setCaseId(id);
-        review.setReviewStatus(REVIEW_APPROVED);
-        review.setReviewComment(request.getComment());
-        review.setReviewerId(operator.getId());
-        review.setReviewedAt(now);
-        review.setCreatedAt(now);
-        review.setUpdatedAt(now);
-        caseMapper.upsertLegalReview(review);
-
-        addProcess(id, record.getStatus(), record.getStatus(), operatorName, "Legal review approved", httpRequest);
+        WorkflowActionRequest workflowRequest = new WorkflowActionRequest();
+        workflowRequest.setComment(request.getComment());
+        caseWorkflowService.approveCaseWorkflow(id,
+                "LEGAL_AUDIT_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 
@@ -379,24 +362,14 @@ public class CaseServiceImpl implements CaseService {
                                                 LegalReviewRejectRequest request,
                                                 String operatorName,
                                                 HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW to reject legal review");
-
-        User operator = requireOperator(operatorName);
-        LocalDateTime now = LocalDateTime.now();
-
-        CaseLegalReview review = new CaseLegalReview();
-        review.setCaseId(id);
-        review.setReviewStatus(REVIEW_REJECTED);
-        review.setReviewComment(request.getReason());
-        review.setReviewerId(operator.getId());
-        review.setReviewedAt(now);
-        review.setCreatedAt(now);
-        review.setUpdatedAt(now);
-        caseMapper.upsertLegalReview(review);
-
-        caseMapper.updateCaseStatus(id, STATUS_INVESTIGATING, record.getAcceptanceTime());
-        addProcess(id, record.getStatus(), STATUS_INVESTIGATING, operatorName, request.getReason(), httpRequest);
+        WorkflowActionRequest workflowRequest = new WorkflowActionRequest();
+        workflowRequest.setComment(request.getReason());
+        caseWorkflowService.rejectCaseWorkflow(id,
+                "LEGAL_AUDIT_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 
@@ -405,14 +378,6 @@ public class CaseServiceImpl implements CaseService {
                                            SaveDecisionRequest request,
                                            String operatorName,
                                            HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        requireStatus(record, STATUS_LEGAL_REVIEW, "Case must be LEGAL_REVIEW before decision");
-
-        CaseLegalReview review = caseMapper.findLegalReviewByCaseId(id);
-        if (review == null || !REVIEW_APPROVED.equals(review.getReviewStatus())) {
-            throw new AuthException(400, "Legal review must be approved before decision");
-        }
-
         User operator = requireOperator(operatorName);
         LocalDateTime now = LocalDateTime.now();
 
@@ -427,8 +392,14 @@ public class CaseServiceImpl implements CaseService {
         decision.setUpdatedAt(now);
         caseMapper.upsertDecision(decision);
 
-        caseMapper.updateCaseStatus(id, STATUS_DECIDED, record.getAcceptanceTime());
-        addProcess(id, record.getStatus(), STATUS_DECIDED, operatorName, "Decision saved", httpRequest);
+        StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
+        workflowRequest.setComment("Decision submitted for approval");
+        caseWorkflowService.startCaseWorkflow(id,
+                "DECISION_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 
@@ -437,9 +408,6 @@ public class CaseServiceImpl implements CaseService {
                                               RecordExecutionRequest request,
                                               String operatorName,
                                               HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        requireStatus(record, STATUS_DECIDED, "Case must be DECIDED before execution");
-
         User operator = requireOperator(operatorName);
         LocalDateTime now = LocalDateTime.now();
 
@@ -453,16 +421,27 @@ public class CaseServiceImpl implements CaseService {
         execution.setUpdatedAt(now);
         caseMapper.upsertExecution(execution);
 
-        caseMapper.updateCaseStatus(id, STATUS_EXECUTED, record.getAcceptanceTime());
-        addProcess(id, record.getStatus(), STATUS_EXECUTED, operatorName, "Execution recorded", httpRequest);
+        StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
+        workflowRequest.setComment("Execution submitted for approval");
+        caseWorkflowService.startCaseWorkflow(id,
+                "EXECUTION_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 
     @Override
     public CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest) {
-        CaseRecord record = requireCase(id);
-        caseMapper.updateCaseStatus(id, STATUS_ARCHIVED, record.getAcceptanceTime());
-        addProcess(id, record.getStatus(), STATUS_ARCHIVED, operatorName, "Case archived", httpRequest);
+        StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
+        workflowRequest.setComment("Archive submitted for approval");
+        caseWorkflowService.startCaseWorkflow(id,
+                "ARCHIVE_REVIEW",
+                workflowRequest,
+                operatorName,
+                null,
+                httpRequest);
         return toDetail(requireCase(id));
     }
 

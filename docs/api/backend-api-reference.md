@@ -628,6 +628,51 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 - Response: `ApiResponse<CaseDetailResponse>`
 - Success message: `Case unarchived successfully`
 
+## 6.2 Workflow APIs (`/api/workflows`, standard approval chain)
+
+The workflow engine supports multi-stage approval with role nodes (for example `police_officer -> legal_officer -> supervisor`).
+
+### POST `/api/cases/{id}/workflows/{flowType}/start`
+- Auth: required
+- Header (optional but recommended): `Idempotency-Key`
+- Path:
+  - `id` (number)
+  - `flowType` (string, enum): `ACCEPTANCE_REVIEW`, `FILING_REVIEW`, `LEGAL_AUDIT_REVIEW`, `DECISION_REVIEW`, `EXECUTION_REVIEW`, `ARCHIVE_REVIEW`
+- Body (`StartCaseWorkflowRequest`):
+  - `comment` (string, optional)
+- Response: `ApiResponse<WorkflowInstanceResponse>`
+- Success message: `Workflow started successfully`
+
+### GET `/api/cases/{id}/workflows`
+- Auth: required
+- Path: `id` (number)
+- Response: `ApiResponse<List<WorkflowInstanceResponse>>`
+
+### GET `/api/workflows/instances/{instanceId}`
+- Auth: required
+- Path: `instanceId` (number)
+- Response: `ApiResponse<WorkflowInstanceResponse>`
+
+### GET `/api/workflows/tasks/my-pending`
+- Auth: required
+- Response: `ApiResponse<List<PendingWorkflowTaskItem>>`
+
+### POST `/api/workflows/tasks/{taskId}/approve`
+- Auth: required
+- Header (optional but recommended): `Idempotency-Key`
+- Body (`WorkflowActionRequest`):
+  - `comment` (string, optional)
+- Response: `ApiResponse<WorkflowInstanceResponse>`
+- Success message: `Task approved successfully`
+
+### POST `/api/workflows/tasks/{taskId}/reject`
+- Auth: required
+- Header (optional but recommended): `Idempotency-Key`
+- Body (`WorkflowActionRequest`):
+  - `comment` (string, required by business rule)
+- Response: `ApiResponse<WorkflowInstanceResponse>`
+- Success message: `Task rejected successfully`
+
 ---
 
 ## 7. Statistics APIs (`/api/statistics`)

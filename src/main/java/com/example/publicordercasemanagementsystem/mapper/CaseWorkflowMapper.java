@@ -35,6 +35,13 @@ public interface CaseWorkflowMapper {
 
     CaseWorkflowTask findTodoTaskById(@Param("taskId") Long taskId);
 
+    CaseWorkflowTask findTodoTaskByCaseFlowAndRole(@Param("caseId") Long caseId,
+                                                   @Param("flowType") String flowType,
+                                                   @Param("roleCode") String roleCode);
+
+    CaseWorkflowTask findTodoTaskByCaseFlow(@Param("caseId") Long caseId,
+                                            @Param("flowType") String flowType);
+
     List<CaseWorkflowTask> findTasksByInstanceId(@Param("instanceId") Long instanceId);
 
     List<CaseWorkflowTask> findPendingTasksByRole(@Param("roleCode") String roleCode);

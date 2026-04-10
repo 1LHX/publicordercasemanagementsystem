@@ -166,6 +166,49 @@
           and t.status = 'TODO'
     </select>
 
+    <select id="findTodoTaskByCaseFlowAndRole" resultMap="CaseWorkflowTaskResult">
+        select t.*, wn.node_name, u.name as acted_by_name,
+               i.case_id, c.case_number, i.flow_type
+        from case_workflow_tasks t
+        inner join case_workflow_instances i on i.id = t.instance_id
+        inner join cases c on c.id = i.case_id
+        left join workflow_nodes wn
+               on wn.workflow_definition_id = (
+                    select wd.id from workflow_definitions wd
+                    where wd.flow_type = i.flow_type and wd.version = i.flow_version
+                    limit 1
+               )
+              and wn.node_key = t.node_key
+        left join users u on u.id = t.acted_by
+        where t.status = 'TODO'
+          and i.case_id = #{caseId}
+          and i.flow_type = #{flowType}
+          and t.assignee_role = #{roleCode}
+        order by t.id asc
+        limit 1
+    </select>
+
+    <select id="findTodoTaskByCaseFlow" resultMap="CaseWorkflowTaskResult">
+        select t.*, wn.node_name, u.name as acted_by_name,
+               i.case_id, c.case_number, i.flow_type
+        from case_workflow_tasks t
+        inner join case_workflow_instances i on i.id = t.instance_id
+        inner join cases c on c.id = i.case_id
+        left join workflow_nodes wn
+               on wn.workflow_definition_id = (
+                    select wd.id from workflow_definitions wd
+                    where wd.flow_type = i.flow_type and wd.version = i.flow_version
+                    limit 1
+               )
+              and wn.node_key = t.node_key
+        left join users u on u.id = t.acted_by
+        where t.status = 'TODO'
+          and i.case_id = #{caseId}
+          and i.flow_type = #{flowType}
+        order by t.id asc
+        limit 1
+    </select>
+
     <select id="findTasksByInstanceId" resultMap="CaseWorkflowTaskResult">
         select t.*, wn.node_name, u.name as acted_by_name,
                i.case_id, c.case_number, i.flow_type

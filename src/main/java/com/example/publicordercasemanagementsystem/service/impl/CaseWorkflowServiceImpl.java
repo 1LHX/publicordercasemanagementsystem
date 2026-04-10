@@ -172,6 +172,25 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
 
     @Override
     @Transactional
+    public WorkflowInstanceResponse approveCaseWorkflow(Long caseId,
+                                                        String flowType,
+                                                        WorkflowActionRequest request,
+                                                        String operatorName,
+                                                        String idempotencyKey,
+                                                        HttpServletRequest httpRequest) {
+        User operator = requireOperator(operatorName);
+        String normalizedFlowType = normalizeFlowType(flowType);
+        CaseWorkflowTask task = ADMIN_ROLE.equals(operator.getRole())
+                ? workflowMapper.findTodoTaskByCaseFlow(caseId, normalizedFlowType)
+                : workflowMapper.findTodoTaskByCaseFlowAndRole(caseId, normalizedFlowType, operator.getRole());
+        if (task == null) {
+            throw new AuthException(404, "No pending task for current operator and flow");
+        }
+        return approveTask(task.getId(), request, operatorName, idempotencyKey, httpRequest);
+    }
+
+    @Override
+    @Transactional
     public WorkflowInstanceResponse rejectTask(Long taskId,
                                                WorkflowActionRequest request,
                                                String operatorName,
@@ -213,6 +232,25 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
                 httpRequest));
 
         return getInstance(instance.getId());
+    }
+
+    @Override
+    @Transactional
+    public WorkflowInstanceResponse rejectCaseWorkflow(Long caseId,
+                                                       String flowType,
+                                                       WorkflowActionRequest request,
+                                                       String operatorName,
+                                                       String idempotencyKey,
+                                                       HttpServletRequest httpRequest) {
+        User operator = requireOperator(operatorName);
+        String normalizedFlowType = normalizeFlowType(flowType);
+        CaseWorkflowTask task = ADMIN_ROLE.equals(operator.getRole())
+                ? workflowMapper.findTodoTaskByCaseFlow(caseId, normalizedFlowType)
+                : workflowMapper.findTodoTaskByCaseFlowAndRole(caseId, normalizedFlowType, operator.getRole());
+        if (task == null) {
+            throw new AuthException(404, "No pending task for current operator and flow");
+        }
+        return rejectTask(task.getId(), request, operatorName, idempotencyKey, httpRequest);
     }
 
     @Override
