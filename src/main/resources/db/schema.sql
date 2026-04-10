@@ -9,6 +9,11 @@ DROP TABLE IF EXISTS case_decisions;
 DROP TABLE IF EXISTS case_legal_reviews;
 DROP TABLE IF EXISTS case_evidences;
 DROP TABLE IF EXISTS case_processes;
+DROP TABLE IF EXISTS case_workflow_action_logs;
+DROP TABLE IF EXISTS case_workflow_tasks;
+DROP TABLE IF EXISTS case_workflow_instances;
+DROP TABLE IF EXISTS workflow_nodes;
+DROP TABLE IF EXISTS workflow_definitions;
 DROP TABLE IF EXISTS cases;
 DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS login_logs;
@@ -258,6 +263,128 @@ CREATE TABLE case_executions (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
+CREATE TABLE workflow_definitions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    flow_type VARCHAR(64) NOT NULL,
+    version INT NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_workflow_definitions_flow_version (flow_type, version),
+    KEY idx_workflow_definitions_flow_active (flow_type, is_active)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE workflow_nodes (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    workflow_definition_id BIGINT NOT NULL,
+    node_key VARCHAR(64) NOT NULL,
+    node_name VARCHAR(128) NOT NULL,
+    node_order INT NOT NULL,
+    role_code VARCHAR(64) NOT NULL,
+    decision_mode VARCHAR(32) NOT NULL DEFAULT 'ANY_ONE',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_workflow_nodes_def_node (workflow_definition_id, node_key),
+    UNIQUE KEY uk_workflow_nodes_def_order (workflow_definition_id, node_order),
+    KEY idx_workflow_nodes_role (role_code),
+    CONSTRAINT fk_workflow_nodes_definition
+        FOREIGN KEY (workflow_definition_id) REFERENCES workflow_definitions (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_workflow_nodes_role
+        FOREIGN KEY (role_code) REFERENCES roles (code)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_workflow_instances (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    case_id BIGINT NOT NULL,
+    flow_type VARCHAR(64) NOT NULL,
+    flow_version INT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    current_node_key VARCHAR(64) NULL,
+    started_by BIGINT NULL,
+    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_by BIGINT NULL,
+    finished_at DATETIME NULL,
+    snapshot_json JSON NULL,
+    PRIMARY KEY (id),
+    KEY idx_case_workflow_instances_case (case_id),
+    KEY idx_case_workflow_instances_case_flow_status (case_id, flow_type, status),
+    KEY idx_case_workflow_instances_started_by (started_by),
+    KEY idx_case_workflow_instances_finished_by (finished_by),
+    CONSTRAINT fk_case_workflow_instances_case
+        FOREIGN KEY (case_id) REFERENCES cases (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_instances_started_by
+        FOREIGN KEY (started_by) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_instances_finished_by
+        FOREIGN KEY (finished_by) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_workflow_tasks (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    instance_id BIGINT NOT NULL,
+    node_key VARCHAR(64) NOT NULL,
+    round_no INT NOT NULL DEFAULT 1,
+    assignee_role VARCHAR(64) NOT NULL,
+    assignee_user_id BIGINT NULL,
+    status VARCHAR(32) NOT NULL,
+    comment VARCHAR(1000) NULL,
+    acted_by BIGINT NULL,
+    acted_at DATETIME NULL,
+    due_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_case_workflow_tasks_instance_node_round (instance_id, node_key, round_no),
+    KEY idx_case_workflow_tasks_status_role (status, assignee_role),
+    KEY idx_case_workflow_tasks_assignee_user (assignee_user_id),
+    KEY idx_case_workflow_tasks_acted_by (acted_by),
+    CONSTRAINT fk_case_workflow_tasks_instance
+        FOREIGN KEY (instance_id) REFERENCES case_workflow_instances (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_tasks_assignee_role
+        FOREIGN KEY (assignee_role) REFERENCES roles (code)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_tasks_assignee_user
+        FOREIGN KEY (assignee_user_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_tasks_acted_by
+        FOREIGN KEY (acted_by) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE case_workflow_action_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    instance_id BIGINT NOT NULL,
+    task_id BIGINT NULL,
+    action_type VARCHAR(32) NOT NULL,
+    actor_id BIGINT NULL,
+    actor_name VARCHAR(64) NULL,
+    actor_role VARCHAR(64) NULL,
+    comment VARCHAR(1000) NULL,
+    payload_json JSON NULL,
+    request_id VARCHAR(128) NULL,
+    ip VARCHAR(45) NULL,
+    user_agent VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_case_workflow_action_logs_request_id (request_id),
+    KEY idx_case_workflow_action_logs_instance (instance_id),
+    KEY idx_case_workflow_action_logs_task (task_id),
+    KEY idx_case_workflow_action_logs_actor (actor_id),
+    CONSTRAINT fk_case_workflow_action_logs_instance
+        FOREIGN KEY (instance_id) REFERENCES case_workflow_instances (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_action_logs_task
+        FOREIGN KEY (task_id) REFERENCES case_workflow_tasks (id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_case_workflow_action_logs_actor
+        FOREIGN KEY (actor_id) REFERENCES users (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+
 -- Minimal seed data
 INSERT INTO roles (code, name, sort_order, is_active) VALUES
     ('admin', 'Administrator', 1, 1),
@@ -313,3 +440,40 @@ ON DUPLICATE KEY UPDATE
     department_id = VALUES(department_id),
     is_active = VALUES(is_active),
     updated_at = NOW();
+
+INSERT INTO workflow_definitions (id, flow_type, version, name, is_active) VALUES
+    (1001, 'ACCEPTANCE_REVIEW', 1, 'Acceptance Review Workflow', 1),
+    (1002, 'FILING_REVIEW', 1, 'Filing Review Workflow', 1),
+    (1003, 'LEGAL_AUDIT_REVIEW', 1, 'Legal Audit Workflow', 1),
+    (1004, 'DECISION_REVIEW', 1, 'Decision Review Workflow', 1),
+    (1005, 'EXECUTION_REVIEW', 1, 'Execution Review Workflow', 1),
+    (1006, 'ARCHIVE_REVIEW', 1, 'Archive Review Workflow', 1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    is_active = VALUES(is_active);
+
+INSERT INTO workflow_nodes (
+    id, workflow_definition_id, node_key, node_name, node_order, role_code, decision_mode
+) VALUES
+    (1101, 1001, 'SUPERVISOR_APPROVAL', 'Supervisor Acceptance Approval', 1, 'supervisor', 'ANY_ONE'),
+
+    (1201, 1002, 'LEGAL_REVIEW', 'Legal Filing Review', 1, 'legal_officer', 'ANY_ONE'),
+    (1202, 1002, 'SUPERVISOR_APPROVAL', 'Supervisor Filing Approval', 2, 'supervisor', 'ANY_ONE'),
+
+    (1301, 1003, 'LEGAL_REVIEW', 'Legal Audit Review', 1, 'legal_officer', 'ANY_ONE'),
+    (1302, 1003, 'SUPERVISOR_APPROVAL', 'Supervisor Legal Audit Approval', 2, 'supervisor', 'ANY_ONE'),
+
+    (1401, 1004, 'LEGAL_REVIEW', 'Legal Decision Review', 1, 'legal_officer', 'ANY_ONE'),
+    (1402, 1004, 'SUPERVISOR_APPROVAL', 'Supervisor Decision Approval', 2, 'supervisor', 'ANY_ONE'),
+
+    (1501, 1005, 'LEGAL_REVIEW', 'Legal Execution Review', 1, 'legal_officer', 'ANY_ONE'),
+    (1502, 1005, 'SUPERVISOR_APPROVAL', 'Supervisor Execution Approval', 2, 'supervisor', 'ANY_ONE'),
+
+    (1601, 1006, 'LEGAL_REVIEW', 'Legal Archive Review', 1, 'legal_officer', 'ANY_ONE'),
+    (1602, 1006, 'SUPERVISOR_APPROVAL', 'Supervisor Archive Approval', 2, 'supervisor', 'ANY_ONE')
+ON DUPLICATE KEY UPDATE
+    node_name = VALUES(node_name),
+    node_order = VALUES(node_order),
+    role_code = VALUES(role_code),
+    decision_mode = VALUES(decision_mode);
+

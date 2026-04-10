@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.CaseWorkflowMapper">
+
+    <resultMap id="WorkflowDefinitionResult" type="com.example.publicordercasemanagementsystem.pojo.WorkflowDefinition">
+        <id column="id" property="id" />
+        <result column="flow_type" property="flowType" />
+        <result column="version" property="version" />
+        <result column="name" property="name" />
+        <result column="is_active" property="isActive" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+    <resultMap id="WorkflowNodeResult" type="com.example.publicordercasemanagementsystem.pojo.WorkflowNode">
+        <id column="id" property="id" />
+        <result column="workflow_definition_id" property="workflowDefinitionId" />
+        <result column="node_key" property="nodeKey" />
+        <result column="node_name" property="nodeName" />
+        <result column="node_order" property="nodeOrder" />
+        <result column="role_code" property="roleCode" />
+        <result column="decision_mode" property="decisionMode" />
+    </resultMap>
+
+    <resultMap id="CaseWorkflowInstanceResult" type="com.example.publicordercasemanagementsystem.pojo.CaseWorkflowInstance">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="flow_type" property="flowType" />
+        <result column="flow_version" property="flowVersion" />
+        <result column="status" property="status" />
+        <result column="current_node_key" property="currentNodeKey" />
+        <result column="started_by" property="startedBy" />
+        <result column="started_by_name" property="startedByName" />
+        <result column="started_at" property="startedAt" />
+        <result column="finished_by" property="finishedBy" />
+        <result column="finished_by_name" property="finishedByName" />
+        <result column="finished_at" property="finishedAt" />
+        <result column="snapshot_json" property="snapshotJson" />
+    </resultMap>
+
+    <resultMap id="CaseWorkflowTaskResult" type="com.example.publicordercasemanagementsystem.pojo.CaseWorkflowTask">
+        <id column="id" property="id" />
+        <result column="instance_id" property="instanceId" />
+        <result column="case_id" property="caseId" />
+        <result column="case_number" property="caseNumber" />
+        <result column="flow_type" property="flowType" />
+        <result column="node_key" property="nodeKey" />
+        <result column="node_name" property="nodeName" />
+        <result column="round_no" property="roundNo" />
+        <result column="assignee_role" property="assigneeRole" />
+        <result column="assignee_user_id" property="assigneeUserId" />
+        <result column="status" property="status" />
+        <result column="comment" property="comment" />
+        <result column="acted_by" property="actedBy" />
+        <result column="acted_by_name" property="actedByName" />
+        <result column="acted_at" property="actedAt" />
+        <result column="due_at" property="dueAt" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+    <resultMap id="CaseWorkflowActionLogResult" type="com.example.publicordercasemanagementsystem.pojo.CaseWorkflowActionLog">
+        <id column="id" property="id" />
+        <result column="instance_id" property="instanceId" />
+        <result column="task_id" property="taskId" />
+        <result column="action_type" property="actionType" />
+        <result column="actor_id" property="actorId" />
+        <result column="actor_name" property="actorName" />
+        <result column="actor_role" property="actorRole" />
+        <result column="comment" property="comment" />
+        <result column="payload_json" property="payloadJson" />
+        <result column="request_id" property="requestId" />
+        <result column="ip" property="ip" />
+        <result column="user_agent" property="userAgent" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+    <select id="findActiveDefinitionByFlowType" resultMap="WorkflowDefinitionResult">
+        select *
+        from workflow_definitions
+        where flow_type = #{flowType}
+          and is_active = 1
+        order by version desc
+        limit 1
+    </select>
+
+    <select id="findNodesByDefinitionId" resultMap="WorkflowNodeResult">
+        select *
+        from workflow_nodes
+        where workflow_definition_id = #{definitionId}
+        order by node_order asc
+    </select>
+
+    <insert id="insertWorkflowInstance" useGeneratedKeys="true" keyProperty="id">
+        insert into case_workflow_instances (
+            case_id, flow_type, flow_version, status,
+            current_node_key, started_by, started_at, snapshot_json
+        ) values (
+            #{caseId}, #{flowType}, #{flowVersion}, #{status},
+            #{currentNodeKey}, #{startedBy}, #{startedAt}, #{snapshotJson}
+        )
+    </insert>
+
+    <select id="findByInstanceId" resultMap="CaseWorkflowInstanceResult">
+        select i.*, su.name as started_by_name, fu.name as finished_by_name
+        from case_workflow_instances i
+        left join users su on su.id = i.started_by
+        left join users fu on fu.id = i.finished_by
+        where i.id = #{instanceId}
+    </select>
+
+    <select id="findByCaseId" resultMap="CaseWorkflowInstanceResult">
+        select i.*, su.name as started_by_name, fu.name as finished_by_name
+        from case_workflow_instances i
+        left join users su on su.id = i.started_by
+        left join users fu on fu.id = i.finished_by
+        where i.case_id = #{caseId}
+        order by i.id desc
+    </select>
+
+    <select id="findActiveInstanceByCaseIdAndFlowType" resultMap="CaseWorkflowInstanceResult">
+        select i.*, su.name as started_by_name, fu.name as finished_by_name
+        from case_workflow_instances i
+        left join users su on su.id = i.started_by
+        left join users fu on fu.id = i.finished_by
+        where i.case_id = #{caseId}
+          and i.flow_type = #{flowType}
+          and i.status = 'PENDING'
+        order by i.id desc
+        limit 1
+    </select>
+
+    <update id="updateInstanceProgress">
+        update case_workflow_instances
+        set status = #{status},
+            current_node_key = #{currentNodeKey},
+            finished_by = #{finishedBy},
+            finished_at = #{finishedAt}
+        where id = #{id}
+    </update>
+
+    <insert id="insertWorkflowTask" useGeneratedKeys="true" keyProperty="id">
+        insert into case_workflow_tasks (
+            instance_id, node_key, round_no, assignee_role,
+            assignee_user_id, status, comment, acted_by, acted_at, due_at
+        ) values (
+            #{instanceId}, #{nodeKey}, #{roundNo}, #{assigneeRole},
+            #{assigneeUserId}, #{status}, #{comment}, #{actedBy}, #{actedAt}, #{dueAt}
+        )
+    </insert>
+
+    <select id="findTodoTaskById" resultMap="CaseWorkflowTaskResult">
+        select t.*, wn.node_name, u.name as acted_by_name,
+               i.case_id, c.case_number, i.flow_type
+        from case_workflow_tasks t
+        inner join case_workflow_instances i on i.id = t.instance_id
+        inner join cases c on c.id = i.case_id
+        left join workflow_nodes wn
+               on wn.workflow_definition_id = (
+                    select wd.id from workflow_definitions wd
+                    where wd.flow_type = i.flow_type and wd.version = i.flow_version
+                    limit 1
+               )
+              and wn.node_key = t.node_key
+        left join users u on u.id = t.acted_by
+        where t.id = #{taskId}
+          and t.status = 'TODO'
+    </select>
+
+    <select id="findTasksByInstanceId" resultMap="CaseWorkflowTaskResult">
+        select t.*, wn.node_name, u.name as acted_by_name,
+               i.case_id, c.case_number, i.flow_type
+        from case_workflow_tasks t
+        inner join case_workflow_instances i on i.id = t.instance_id
+        inner join cases c on c.id = i.case_id
+        left join workflow_nodes wn
+               on wn.workflow_definition_id = (
+                    select wd.id from workflow_definitions wd
+                    where wd.flow_type = i.flow_type and wd.version = i.flow_version
+                    limit 1
+               )
+              and wn.node_key = t.node_key
+        left join users u on u.id = t.acted_by
+        where t.instance_id = #{instanceId}
+        order by t.id asc
+    </select>
+
+    <select id="findPendingTasksByRole" resultMap="CaseWorkflowTaskResult">
+        select t.*, wn.node_name,
+               i.case_id, c.case_number, i.flow_type
+        from case_workflow_tasks t
+        inner join case_workflow_instances i on i.id = t.instance_id
+        inner join cases c on c.id = i.case_id
+        left join workflow_nodes wn
+               on wn.workflow_definition_id = (
+                    select wd.id from workflow_definitions wd
+                    where wd.flow_type = i.flow_type and wd.version = i.flow_version
+                    limit 1
+               )
+              and wn.node_key = t.node_key
+        where t.status = 'TODO'
+          and t.assignee_role = #{roleCode}
+        order by t.id desc
+    </select>
+
+    <update id="updateTaskDecision">
+        update case_workflow_tasks
+        set status = #{status},
+            comment = #{comment},
+            acted_by = #{actedBy},
+            acted_at = #{actedAt}
+        where id = #{taskId}
+          and status = 'TODO'
+    </update>
+
+    <update id="closeTodoTasksByInstanceId">
+        update case_workflow_tasks
+        set status = #{status},
+            comment = #{comment},
+            acted_by = #{actedBy},
+            acted_at = #{actedAt}
+        where instance_id = #{instanceId}
+          and status = 'TODO'
+    </update>
+
+    <insert id="insertActionLog" useGeneratedKeys="true" keyProperty="id">
+        insert into case_workflow_action_logs (
+            instance_id, task_id, action_type, actor_id, actor_name, actor_role,
+            comment, payload_json, request_id, ip, user_agent, created_at
+        ) values (
+            #{instanceId}, #{taskId}, #{actionType}, #{actorId}, #{actorName}, #{actorRole},
+            #{comment}, #{payloadJson}, #{requestId}, #{ip}, #{userAgent}, #{createdAt}
+        )
+    </insert>
+
+    <select id="findActionLogByRequestId" resultMap="CaseWorkflowActionLogResult">
+        select *
+        from case_workflow_action_logs
+        where request_id = #{requestId}
+        limit 1
+    </select>
+
+</mapper>
+

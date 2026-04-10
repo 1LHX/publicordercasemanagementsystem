@@ -10,6 +10,9 @@ DELETE FROM case_decisions;
 DELETE FROM case_legal_reviews;
 DELETE FROM case_evidences;
 DELETE FROM case_processes;
+DELETE FROM case_workflow_action_logs;
+DELETE FROM case_workflow_tasks;
+DELETE FROM case_workflow_instances;
 DELETE FROM cases;
 
 SET FOREIGN_KEY_CHECKS = 1;
