@@ -100,13 +100,13 @@ class CaseServiceImplWorkflowCompatTest {
         when(caseMapper.findById(101L)).thenReturn(record);
 
         assertThrows(AuthException.class, () -> caseService.transitionStatus(101L,
-                buildTransition("DECIDED"), "officer_wang", new MockHttpServletRequest()));
+                buildTransitionToDecided(), "officer_wang", new MockHttpServletRequest()));
     }
 
-    private com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest buildTransition(String toStatus) {
+    private com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest buildTransitionToDecided() {
         com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest request =
                 new com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest();
-        request.setToStatus(toStatus);
+        request.setToStatus("DECIDED");
         request.setComment("test");
         return request;
     }
