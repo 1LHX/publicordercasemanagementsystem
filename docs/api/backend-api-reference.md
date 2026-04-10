@@ -378,6 +378,7 @@ Departments are an organizational tree used by `users.department_id` and `cases.
 ### POST `/api/cases/{id}/accept`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body: none
 - Response: `ApiResponse<CaseDetailResponse>`
 - Success message: `Case accepted successfully`
@@ -572,6 +573,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/legal-review/submit`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body (`LegalReviewSubmitRequest`):
   - `comment` (string, required)
 - Response: `ApiResponse<CaseDetailResponse>`
@@ -580,6 +582,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/legal-review/approve`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body (`LegalReviewApproveRequest`):
   - `comment` (string, required)
 - Response: `ApiResponse<CaseDetailResponse>`
@@ -588,6 +591,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/legal-review/reject`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body (`LegalReviewRejectRequest`):
   - `reason` (string, required)
 - Response: `ApiResponse<CaseDetailResponse>`
@@ -596,6 +600,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/decision`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body (`SaveDecisionRequest`):
   - `decisionResult` (string, required)
   - `decisionContent` (string, required)
@@ -607,6 +612,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/execution`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body (`RecordExecutionRequest`):
   - `executionResult` (string, required)
   - `executionNote` (string, optional)
@@ -617,6 +623,7 @@ await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
 ### POST `/api/cases/{id}/archive`
 - Auth: required
 - Path: `id` (number)
+- Header (optional): `Idempotency-Key`
 - Body: none
 - Response: `ApiResponse<CaseDetailResponse>`
 - Success message: `Case archived successfully`

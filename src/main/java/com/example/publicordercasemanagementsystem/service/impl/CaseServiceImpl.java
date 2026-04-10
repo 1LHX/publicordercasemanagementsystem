@@ -25,7 +25,6 @@ import com.example.publicordercasemanagementsystem.mapper.UserMapper;
 import com.example.publicordercasemanagementsystem.pojo.CaseDecision;
 import com.example.publicordercasemanagementsystem.pojo.CaseEvidence;
 import com.example.publicordercasemanagementsystem.pojo.CaseExecution;
-import com.example.publicordercasemanagementsystem.pojo.CaseLegalReview;
 import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import com.example.publicordercasemanagementsystem.pojo.CaseRecord;
 import com.example.publicordercasemanagementsystem.pojo.User;
@@ -40,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class CaseServiceImpl implements CaseService {
@@ -48,13 +49,24 @@ public class CaseServiceImpl implements CaseService {
     private static final String STATUS_ACCEPTED = "ACCEPTED";
     private static final String STATUS_INVESTIGATING = "INVESTIGATING";
     private static final String STATUS_LEGAL_REVIEW = "LEGAL_REVIEW";
+    private static final String STATUS_LEGAL_AUDIT_PASSED = "LEGAL_AUDIT_PASSED";
     private static final String STATUS_DECIDED = "DECIDED";
     private static final String STATUS_EXECUTED = "EXECUTED";
     private static final String STATUS_ARCHIVED = "ARCHIVED";
 
-    private static final String REVIEW_SUBMITTED = "SUBMITTED";
-    private static final String REVIEW_APPROVED = "APPROVED";
-    private static final String REVIEW_REJECTED = "REJECTED";
+    private static final String ROLE_SUPERVISOR = "supervisor";
+    private static final String ROLE_ADMIN = "admin";
+
+    private static final Map<String, Set<String>> ALLOWED_STATUS_TRANSITIONS = Map.of(
+            STATUS_REGISTERED, Set.of(STATUS_ACCEPTED, STATUS_ARCHIVED),
+            STATUS_ACCEPTED, Set.of(STATUS_INVESTIGATING, STATUS_ARCHIVED),
+            STATUS_INVESTIGATING, Set.of(STATUS_LEGAL_REVIEW, STATUS_ARCHIVED),
+            STATUS_LEGAL_REVIEW, Set.of(STATUS_INVESTIGATING, STATUS_DECIDED, STATUS_ARCHIVED),
+            STATUS_LEGAL_AUDIT_PASSED, Set.of(STATUS_DECIDED, STATUS_ARCHIVED),
+            STATUS_DECIDED, Set.of(STATUS_EXECUTED, STATUS_ARCHIVED),
+            STATUS_EXECUTED, Set.of(STATUS_ARCHIVED),
+            STATUS_ARCHIVED, Set.of(STATUS_EXECUTED)
+    );
 
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 10;
@@ -222,7 +234,37 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse acceptCase(Long id, String operatorName, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
-        caseMapper.updateCaseStatus(id, STATUS_ACCEPTED, LocalDateTime.now());
+        User operator = requireOperator(operatorName);
+        if (!ROLE_SUPERVISOR.equals(operator.getRole()) && !ROLE_ADMIN.equals(operator.getRole())) {
+            throw new AuthException(403, "Current role cannot accept case");
+        }
+
+        if (STATUS_ACCEPTED.equals(record.getStatus())) {
+            return toDetail(record);
+        }
+        if (!STATUS_REGISTERED.equals(record.getStatus())) {
+            throw new AuthException(400, "Only REGISTERED case can be accepted");
+        }
+
+        String idempotencyKey = extractIdempotencyKey(httpRequest);
+        StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
+        workflowRequest.setComment("Case accepted");
+        caseWorkflowService.startCaseWorkflow(id,
+                "ACCEPTANCE_REVIEW",
+                workflowRequest,
+                operatorName,
+                idempotencyKey,
+                httpRequest);
+
+        WorkflowActionRequest actionRequest = new WorkflowActionRequest();
+        actionRequest.setComment("Case accepted");
+        caseWorkflowService.approveCaseWorkflow(id,
+                "ACCEPTANCE_REVIEW",
+                actionRequest,
+                operatorName,
+                idempotencyKey == null ? null : idempotencyKey + "-approve",
+                httpRequest);
+
         addProcess(id, record.getStatus(), STATUS_ACCEPTED, operatorName, "Case accepted", httpRequest);
         return toDetail(requireCase(id));
     }
@@ -243,9 +285,13 @@ public class CaseServiceImpl implements CaseService {
     public CaseDetailResponse transitionStatus(Long id, StatusTransitionRequest request, String operatorName, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         String fromStatus = record.getStatus();
-        String toStatus = request.getToStatus();
+        String toStatus = request.getToStatus() == null ? null : request.getToStatus().trim().toUpperCase();
         if (fromStatus != null && fromStatus.equals(toStatus)) {
             throw new AuthException(400, "Target status must be different from current status");
+        }
+        Set<String> allowedTargets = ALLOWED_STATUS_TRANSITIONS.getOrDefault(fromStatus, Set.of());
+        if (!allowedTargets.contains(toStatus)) {
+            throw new AuthException(400, "Illegal status transition");
         }
         LocalDateTime acceptanceTime = record.getAcceptanceTime();
         if (STATUS_ACCEPTED.equals(toStatus) && acceptanceTime == null) {
@@ -336,7 +382,7 @@ public class CaseServiceImpl implements CaseService {
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -352,7 +398,7 @@ public class CaseServiceImpl implements CaseService {
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -368,7 +414,7 @@ public class CaseServiceImpl implements CaseService {
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -398,7 +444,7 @@ public class CaseServiceImpl implements CaseService {
                 "DECISION_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -427,7 +473,7 @@ public class CaseServiceImpl implements CaseService {
                 "EXECUTION_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -440,7 +486,7 @@ public class CaseServiceImpl implements CaseService {
                 "ARCHIVE_REVIEW",
                 workflowRequest,
                 operatorName,
-                null,
+                extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
@@ -517,6 +563,17 @@ public class CaseServiceImpl implements CaseService {
             items.add(toListItem(record));
         }
         return new PageResult<>(items, total, page, size);
+    }
+
+    private String extractIdempotencyKey(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String idempotencyKey = request.getHeader("Idempotency-Key");
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        return idempotencyKey.trim();
     }
 
     private String buildDossierContent(CaseRecord record,

@@ -33,6 +33,7 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
 
     private static final String ADMIN_ROLE = "admin";
     private static final String POLICE_ROLE = "police_officer";
+    private static final String SUPERVISOR_ROLE = "supervisor";
 
     private static final String INSTANCE_PENDING = "PENDING";
     private static final String INSTANCE_APPROVED = "APPROVED";
@@ -355,7 +356,13 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
         if (ADMIN_ROLE.equals(operator.getRole())) {
             return;
         }
-        if ("ACCEPTANCE_REVIEW".equals(flowType) || "FILING_REVIEW".equals(flowType)
+        if ("ACCEPTANCE_REVIEW".equals(flowType)) {
+            if (!POLICE_ROLE.equals(operator.getRole()) && !SUPERVISOR_ROLE.equals(operator.getRole())) {
+                throw new AuthException(403, "Only police officer or supervisor can start acceptance review");
+            }
+            return;
+        }
+        if ("FILING_REVIEW".equals(flowType)
                 || "DECISION_REVIEW".equals(flowType) || "EXECUTION_REVIEW".equals(flowType)
                 || "ARCHIVE_REVIEW".equals(flowType)) {
             if (!POLICE_ROLE.equals(operator.getRole())) {
@@ -369,23 +376,23 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     }
 
     private void validateCaseStatusForStart(String flowType, String caseStatus) {
-        String expected;
+        List<String> expected;
         if ("ACCEPTANCE_REVIEW".equals(flowType)) {
-            expected = "REGISTERED";
+            expected = List.of("REGISTERED");
         } else if ("FILING_REVIEW".equals(flowType)) {
-            expected = "ACCEPTED";
+            expected = List.of("ACCEPTED");
         } else if ("LEGAL_AUDIT_REVIEW".equals(flowType)) {
-            expected = "INVESTIGATING";
+            expected = List.of("INVESTIGATING");
         } else if ("DECISION_REVIEW".equals(flowType)) {
-            expected = "LEGAL_AUDIT_PASSED";
+            expected = List.of("LEGAL_AUDIT_PASSED", "LEGAL_REVIEW");
         } else if ("EXECUTION_REVIEW".equals(flowType)) {
-            expected = "DECIDED";
+            expected = List.of("DECIDED");
         } else if ("ARCHIVE_REVIEW".equals(flowType)) {
-            expected = "EXECUTED";
+            expected = List.of("EXECUTED");
         } else {
             throw new AuthException(400, "Unsupported flow type");
         }
-        if (!expected.equals(caseStatus)) {
+        if (!expected.contains(caseStatus)) {
             throw new AuthException(400, "Case status does not match workflow requirement: expected " + expected);
         }
     }
