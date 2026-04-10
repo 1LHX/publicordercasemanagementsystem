@@ -5,21 +5,21 @@
 2) 前端或脚本调用时，按 ApiResponse<T> 解析并处理 code != 200 的业务失败。
 -->
 
-# Backend API Reference (Frontend + AI)
+# 后端接口参考（前端联调 + AI 调用）
 
-This document is generated from the current controller and DTO implementation in `src/main/java/com/example/publicordercasemanagementsystem`.
+本文档基于当前 `src/main/java/com/example/publicordercasemanagementsystem` 控制器与 DTO 实现整理。
 
-## 1. Base conventions
+## 1. 基础约定
 
-- Base path: `/api`
-- Content type: `application/json`
-- Protected APIs require header:
+- 基础路径：`/api`
+- 内容类型：`application/json`
+- 受保护接口请求头：
 
 ```http
 Authorization: Bearer <access_token>
 ```
 
-- Unified response envelope (`ApiResponse<T>`):
+- 统一响应结构（`ApiResponse<T>`）：
 
 ```json
 {
@@ -29,7 +29,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-- Validation failures are flattened by global handler:
+- 参数校验失败的统一返回：
 
 ```json
 {
@@ -39,718 +39,359 @@ Authorization: Bearer <access_token>
 }
 ```
 
-## 2. Auth model
+## 2. 认证模型
 
-- Public endpoints:
+- 公共接口：
   - `/api/auth/**`
   - `/api/dashscope/**`
-- All other routes require JWT (configured in `SecurityConfig`).
-- JWT principal is the user `name` claim. Endpoints like `/api/users/me` and case operation audit use that value.
+- 其余接口都需要 JWT（见 `SecurityConfig`）。
+- JWT 主体使用 `name` claim（不是 user id）。`/api/users/me` 与案件操作审计都依赖该值。
 
-## 3. Common error codes
+## 3. 常见错误码
 
-- `400`: validation/business rule failure
-- `401`: unauthenticated, invalid token, or user not found
-- `404`: resource not found (for example case id)
-- `429`: login lockout
-- `5xx`: internal or upstream service error
+- `400`：参数校验失败或业务规则不满足
+- `401`：未认证、令牌无效、用户不存在
+- `404`：资源不存在（如 case id）
+- `429`：登录锁定
+- `5xx`：系统内部错误或上游错误
 
 ---
 
-## 4. Auth APIs (`/api/auth`)
+## 4. 认证接口（`/api/auth`）
 
 ### POST `/api/auth/login`
-- Auth: public
-- Body (`LoginRequest`):
-  - `name` (string, required)
-  - `password` (string, required)
-- Response: `ApiResponse<AuthResponse>`
-- Success message: `Login successful`
+- 鉴权：无需登录
+- 请求体（`LoginRequest`）：
+  - `name`（字符串，必填）
+  - `password`（字符串，必填）
+- 响应：`ApiResponse<AuthResponse>`
+- 成功提示：`Login successful`
 
 ### POST `/api/auth/refresh`
-- Auth: requires header `Authorization`
-- Body (`RefreshRequest`):
-  - `refreshToken` (string, required)
-- Response: `ApiResponse<AuthResponse>`
-- Success message: `Token refreshed successfully`
+- 鉴权：需要 `Authorization` 请求头
+- 请求体（`RefreshRequest`）：
+  - `refreshToken`（字符串，必填）
+- 响应：`ApiResponse<AuthResponse>`
+- 成功提示：`Token refreshed successfully`
 
 ### POST `/api/auth/logout`
-- Auth: requires header `Authorization`
-- Body (`LogoutRequest`):
-  - `refreshToken` (string, required)
-- Response: `ApiResponse<Void>`
-- Success message: `Logout successful`
+- 鉴权：需要 `Authorization` 请求头
+- 请求体（`LogoutRequest`）：
+  - `refreshToken`（字符串，必填）
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Logout successful`
 
 ### POST `/api/auth/register`
-- Auth: public
-- Body (`RegisterRequest`):
-  - `name` (string, required)
-  - `password` (string, required)
-  - `confirmPassword` (string, required)
-  - `role` (string, optional)
-  - `roleName` (string, optional)
-  - `department` (string, optional)
-  - `departmentId` (number, optional)
-- Response: `ApiResponse<UserInfo>`
-- Success message: `Register successful`
+- 鉴权：无需登录
+- 请求体（`RegisterRequest`）：
+  - `name`（字符串，必填）
+  - `password`（字符串，必填）
+  - `confirmPassword`（字符串，必填）
+  - `role`（字符串，可选）
+  - `roleName`（字符串，可选）
+  - `department`（字符串，可选）
+  - `departmentId`（数字，可选）
+- 响应：`ApiResponse<UserInfo>`
+- 成功提示：`Register successful`
 
 ---
 
-## 5. User APIs (`/api/users`)
+## 5. 用户接口（`/api/users`）
 
 ### GET `/api/users`
-- Auth: required
-- Query (all optional):
-  - `name` (string)
-  - `role` (string)
-  - `department` (string)
-  - `departmentId` (number)
-  - `isActive` (boolean)
-  - `page` (number)
-  - `size` (number)
-- Response: `ApiResponse<PageResult<UserListItem>>`
+- 鉴权：需要登录
+- 查询参数（全部可选）：
+  - `name`（字符串）
+  - `role`（字符串）
+  - `department`（字符串）
+  - `departmentId`（数字）
+  - `isActive`（布尔）
+  - `page`（数字）
+  - `size`（数字）
+- 响应：`ApiResponse<PageResult<UserListItem>>`
 
 ### GET `/api/users/me`
-- Auth: required
-- Query: none
-- Response: `ApiResponse<UserInfo>`
-- Notes:
-  - User identity comes from current JWT principal (`authentication.getName()`).
+- 鉴权：需要登录
+- 查询参数：无
+- 响应：`ApiResponse<UserInfo>`
+- 说明：当前用户身份来自 JWT 主体（`authentication.getName()`）。
 
 ### PUT `/api/users/{id}/name`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`UpdateUserNameRequest`):
-  - `name` (string, required)
-- Response: `ApiResponse<UserInfo>`
-- Success message: `User name updated successfully`
-- Notes:
-  - Duplicate name will fail with `code=400`.
-  - Target user's refresh tokens are revoked when name changes.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`UpdateUserNameRequest`）：
+  - `name`（字符串，必填）
+- 响应：`ApiResponse<UserInfo>`
+- 成功提示：`User name updated successfully`
 
 ### PUT `/api/users/{id}/password`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`ChangePasswordRequest`):
-  - `password` (string, required)
-  - `confirmPassword` (string, required)
-- Response: `ApiResponse<Void>`
-- Success message: `User password updated successfully`
-- Notes:
-  - Passwords must match.
-  - Target user's refresh tokens are revoked after password update.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`ChangePasswordRequest`）：
+  - `password`（字符串，必填）
+  - `confirmPassword`（字符串，必填）
+- 响应：`ApiResponse<Void>`
+- 成功提示：`User password updated successfully`
 
 ### PUT `/api/users/{id}/role`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`UpdateUserRoleRequest`):
-  - `role` (string, required, role code)
-- Response: `ApiResponse<UserInfo>`
-- Success message: `User role updated successfully`
-- Notes:
-  - Role code must exist and be active.
-  - Target user's refresh tokens are revoked after role update.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`UpdateUserRoleRequest`）：
+  - `role`（字符串，必填，角色编码）
+- 响应：`ApiResponse<UserInfo>`
+- 成功提示：`User role updated successfully`
 
 ### PUT `/api/users/{id}/status`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`UpdateUserStatusRequest`):
-  - `isActive` (boolean, required)
-- Response: `ApiResponse<UserInfo>`
-- Success message: `User status updated successfully`
-- Notes:
-  - `admin` cannot disable itself.
-  - Target user's refresh tokens are revoked when disabled.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`UpdateUserStatusRequest`）：
+  - `isActive`（布尔，必填）
+- 响应：`ApiResponse<UserInfo>`
+- 成功提示：`User status updated successfully`
 
 ### DELETE `/api/users/{id}`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body: none
-- Response: `ApiResponse<Void>`
-- Success message: `User deleted successfully`
-- Notes:
-  - `admin` cannot delete itself.
-  - This is account deletion, not token logout.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体：无
+- 响应：`ApiResponse<Void>`
+- 成功提示：`User deleted successfully`
 
 ---
 
-## 5.1 Department APIs (`/api/departments`)
-
-Departments are an organizational tree used by `users.department_id` and `cases.department_id`.
+## 5.1 部门接口（`/api/departments`）
 
 ### GET `/api/departments`
-- Auth: required
-- Query (all optional):
-  - `name` (string)
-  - `isActive` (boolean)
-  - `parentId` (number)
-- Response: `ApiResponse<List<DepartmentItem>>`
+- 鉴权：需要登录
+- 查询参数（全部可选）：`name`、`isActive`、`parentId`
+- 响应：`ApiResponse<List<DepartmentItem>>`
 
 ### GET `/api/departments/{id}`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<DepartmentItem>`
+- 鉴权：需要登录
+- 路径参数：`id`（数字）
+- 响应：`ApiResponse<DepartmentItem>`
 
 ### POST `/api/departments`
-- Auth: required (`admin` only)
-- Body (`CreateDepartmentRequest`):
-  - `name` (string, required)
-  - `parentId` (number, optional)
-- Response: `ApiResponse<DepartmentItem>`
-- Success message: `Department created successfully`
-- Notes:
-  - Department name must be unique.
-  - Parent department must exist and be active.
+- 鉴权：需要登录（仅 `admin`）
+- 请求体（`CreateDepartmentRequest`）：`name`（必填）、`parentId`（可选）
+- 响应：`ApiResponse<DepartmentItem>`
+- 成功提示：`Department created successfully`
 
 ### PUT `/api/departments/{id}`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`UpdateDepartmentRequest`):
-  - `name` (string, required)
-  - `parentId` (number, optional)
-- Response: `ApiResponse<DepartmentItem>`
-- Success message: `Department updated successfully`
-- Notes:
-  - Department name must be unique.
-  - Parent cannot be self or create a hierarchy cycle.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`UpdateDepartmentRequest`）：`name`（必填）、`parentId`（可选）
+- 响应：`ApiResponse<DepartmentItem>`
+- 成功提示：`Department updated successfully`
 
 ### PUT `/api/departments/{id}/status`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body (`UpdateDepartmentStatusRequest`):
-  - `isActive` (boolean, required)
-- Response: `ApiResponse<DepartmentItem>`
-- Success message: `Department status updated successfully`
-- Notes:
-  - Inactive parent departments cannot be used as a parent.
-  - Department with users/cases/child departments cannot be disabled.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体（`UpdateDepartmentStatusRequest`）：`isActive`（必填）
+- 响应：`ApiResponse<DepartmentItem>`
+- 成功提示：`Department status updated successfully`
 
 ### DELETE `/api/departments/{id}`
-- Auth: required (`admin` only)
-- Path: `id` (number)
-- Body: none
-- Response: `ApiResponse<Void>`
-- Success message: `Department deleted successfully`
-- Notes:
-  - Department with users/cases/child departments cannot be deleted.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`id`（数字）
+- 请求体：无
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Department deleted successfully`
 
 ---
 
-## 5.2 Role APIs (`/api/roles`)
+## 5.2 角色接口（`/api/roles`）
 
 ### GET `/api/roles`
-- Auth: required
-- Query (optional):
-  - `isActive` (boolean)
-- Response: `ApiResponse<List<RoleItem>>`
+- 鉴权：需要登录
+- 查询参数（可选）：`isActive`
+- 响应：`ApiResponse<List<RoleItem>>`
 
 ### GET `/api/roles/{code}`
-- Auth: required
-- Path: `code` (string)
-- Response: `ApiResponse<RoleItem>`
+- 鉴权：需要登录
+- 路径参数：`code`（字符串）
+- 响应：`ApiResponse<RoleItem>`
 
 ### POST `/api/roles`
-- Auth: required (`admin` only)
-- Body (`CreateRoleRequest`):
-  - `code` (string, required)
-  - `name` (string, required)
-  - `sortOrder` (number, optional, default `0`)
-  - `isActive` (boolean, optional, default `true`)
-- Response: `ApiResponse<RoleItem>`
-- Success message: `Role created successfully`
+- 鉴权：需要登录（仅 `admin`）
+- 请求体（`CreateRoleRequest`）：`code`、`name` 必填，`sortOrder`、`isActive` 可选
+- 响应：`ApiResponse<RoleItem>`
+- 成功提示：`Role created successfully`
 
 ### PUT `/api/roles/{code}`
-- Auth: required (`admin` only)
-- Path: `code` (string)
-- Body (`UpdateRoleRequest`):
-  - `name` (string, required)
-  - `sortOrder` (number, optional)
-- Response: `ApiResponse<RoleItem>`
-- Success message: `Role updated successfully`
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`code`（字符串）
+- 请求体（`UpdateRoleRequest`）：`name` 必填，`sortOrder` 可选
+- 响应：`ApiResponse<RoleItem>`
+- 成功提示：`Role updated successfully`
 
 ### PUT `/api/roles/{code}/status`
-- Auth: required (`admin` only)
-- Path: `code` (string)
-- Body (`UpdateRoleStatusRequest`):
-  - `isActive` (boolean, required)
-- Response: `ApiResponse<RoleItem>`
-- Success message: `Role status updated successfully`
-- Notes:
-  - `admin` role cannot be disabled.
-  - Role in use by users cannot be disabled.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`code`（字符串）
+- 请求体（`UpdateRoleStatusRequest`）：`isActive` 必填
+- 响应：`ApiResponse<RoleItem>`
+- 成功提示：`Role status updated successfully`
 
 ### DELETE `/api/roles/{code}`
-- Auth: required (`admin` only)
-- Path: `code` (string)
-- Body: none
-- Response: `ApiResponse<Void>`
-- Success message: `Role deleted successfully`
-- Notes:
-  - `admin` role cannot be deleted.
-  - Role in use by users cannot be deleted.
+- 鉴权：需要登录（仅 `admin`）
+- 路径参数：`code`（字符串）
+- 请求体：无
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Role deleted successfully`
 
 ---
 
-## 6. Case APIs (`/api/cases`)
+## 6. 案件接口（`/api/cases`）
 
 ### POST `/api/cases`
-- Auth: required
-- Body (`CreateCaseRequest`):
-  - `caseNumber` (string, required)
-  - `title` (string, required)
-  - `typeCode` (string, required)
-  - `departmentId` (number, required)
-  - `reporterName` (string, optional)
-  - `reporterContact` (string, optional)
-  - `incidentTime` (string datetime, optional)
-  - `incidentLocation` (string, optional)
-  - `briefDescription` (string, optional)
-  - `deadlineTime` (string datetime, optional)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case created successfully`
+- 鉴权：需要登录
+- 请求体（`CreateCaseRequest`）：
+  - `caseNumber`、`title`、`typeCode`、`departmentId` 必填
+  - 其他字段可选：`reporterName`、`reporterContact`、`incidentTime`、`incidentLocation`、`briefDescription`、`deadlineTime`
+- 响应：`ApiResponse<CaseDetailResponse>`
+- 成功提示：`Case created successfully`
 
 ### GET `/api/cases`
-- Auth: required
-- Query (all optional):
-  - `caseNumber` (string)
-  - `title` (string)
-  - `typeCode` (string)
-  - `status` (string)
-  - `departmentId` (number)
-  - `handlingOfficerId` (number)
-  - `isOverdue` (boolean)
-  - `page` (number)
-  - `size` (number)
-- Response: `ApiResponse<PageResult<CaseListItem>>`
+- 鉴权：需要登录
+- 查询参数：`caseNumber`、`title`、`typeCode`、`status`、`departmentId`、`handlingOfficerId`、`isOverdue`、`page`、`size`（均可选）
+- 响应：`ApiResponse<PageResult<CaseListItem>>`
 
 ### GET `/api/cases/archived`
-- Auth: required
-- Query: `page` (optional), `size` (optional)
-- Response: `ApiResponse<PageResult<CaseListItem>>`
-
 ### GET `/api/cases/deadline-warnings`
-- Auth: required
-- Query: `withinDays` (optional), `page` (optional), `size` (optional)
-- Response: `ApiResponse<PageResult<CaseListItem>>`
-
 ### GET `/api/cases/overdue`
-- Auth: required
-- Query: `page` (optional), `size` (optional)
-- Response: `ApiResponse<PageResult<CaseListItem>>`
+- 鉴权：需要登录
+- 响应：`ApiResponse<PageResult<CaseListItem>>`
 
 ### GET `/api/cases/{id}`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<CaseDetailResponse>`
+- 鉴权：需要登录
+- 路径参数：`id`
+- 响应：`ApiResponse<CaseDetailResponse>`
 
 ### GET `/api/cases/{id}/export`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<CaseExportResponse>`
-- Success message: `Case dossier exported`
+- 鉴权：需要登录
+- 路径参数：`id`
+- 响应：`ApiResponse<CaseExportResponse>`
+- 成功提示：`Case dossier exported`
 
 ### PUT `/api/cases/{id}`
-- Auth: required
-- Path: `id` (number)
-- Body (`UpdateCaseRequest`):
-  - `title` (string, required)
-  - `typeCode` (string, required)
-  - `departmentId` (number, required)
-  - `reporterName` (optional)
-  - `reporterContact` (optional)
-  - `incidentTime` (optional)
-  - `incidentLocation` (optional)
-  - `briefDescription` (optional)
-  - `deadlineTime` (optional)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case updated successfully`
+- 鉴权：需要登录
+- 路径参数：`id`
+- 请求体（`UpdateCaseRequest`）：`title`、`typeCode`、`departmentId` 必填，其余可选
+- 响应：`ApiResponse<CaseDetailResponse>`
+- 成功提示：`Case updated successfully`
 
 ### DELETE `/api/cases/{id}`
-- Auth: required
-- Path: `id` (number)
-- Body: none
-- Response: `ApiResponse<Void>`
-- Success message: `Case deleted successfully`
-- Notes:
-  - This is a hard delete.
-  - Deleting a case will cascade delete `case_processes`, `case_evidences`, `case_legal_reviews`, `case_decisions`, and `case_executions` because the database foreign keys use `ON DELETE CASCADE`.
+- 鉴权：需要登录
+- 路径参数：`id`
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Case deleted successfully`
 
 ### POST `/api/cases/{id}/accept`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body: none
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case accepted successfully`
+- 鉴权：需要登录
+- 路径参数：`id`
+- 请求头（可选）：`Idempotency-Key`
+- 响应：`ApiResponse<CaseDetailResponse>`
+- 成功提示：`Case accepted successfully`
+- 说明：已接入标准审批链（`ACCEPTANCE_REVIEW`）。
 
 ### POST `/api/cases/{id}/assign`
-- Auth: required
-- Path: `id` (number)
-- Body (`AssignCaseRequest`):
-  - `handlingOfficerId` (number, required)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case assigned successfully`
+- 鉴权：需要登录
+- 路径参数：`id`
+- 请求体（`AssignCaseRequest`）：`handlingOfficerId` 必填
+- 响应：`ApiResponse<CaseDetailResponse>`
 
 ### POST `/api/cases/{id}/status-transitions`
-- Auth: required
-- Path: `id` (number)
-- Body (`StatusTransitionRequest`):
-  - `toStatus` (string, required)
-  - `comment` (string, optional)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case status updated successfully`
+- 鉴权：需要登录
+- 请求体（`StatusTransitionRequest`）：`toStatus` 必填，`comment` 可选
+- 响应：`ApiResponse<CaseDetailResponse>`
 
 ### GET `/api/cases/{id}/processes`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<List<CaseProcessItem>>`
+- 鉴权：需要登录
+- 响应：`ApiResponse<List<CaseProcessItem>>`
 
-### POST `/api/cases/{id}/evidences`
-- Auth: required
-- Path: `id` (number)
-- Body (`CreateEvidenceRequest`):
-  - `fileName` (string, required)
-  - `filePath` (string, required)
-  - `fileType` (string, optional)
-  - `fileSize` (number, optional)
-  - `description` (string, optional)
-- Response: `ApiResponse<CaseEvidenceItem>`
-- Success message: `Evidence added successfully`
+### 证据接口
+- `POST /api/cases/{id}/evidences`
+- `GET /api/cases/{id}/evidences`
+- `PUT /api/cases/{caseId}/evidences/{evidenceId}`
+- `DELETE /api/cases/{caseId}/evidences/{evidenceId}`
 
-### GET `/api/cases/{id}/evidences`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<List<CaseEvidenceItem>>`
+### 兼容审批入口（已接入工作流）
+- `POST /api/cases/{id}/legal-review/submit`
+- `POST /api/cases/{id}/legal-review/approve`
+- `POST /api/cases/{id}/legal-review/reject`
+- `POST /api/cases/{id}/decision`
+- `POST /api/cases/{id}/execution`
+- `POST /api/cases/{id}/archive`
+- `POST /api/cases/{id}/unarchive`
 
-### PUT `/api/cases/{caseId}/evidences/{evidenceId}`
-- Auth: required
-- Path: `caseId` (number), `evidenceId` (number)
-- Body (`UpdateEvidenceRequest`):
-  - `fileName` (string, required)
-  - `filePath` (string, required)
-  - `fileType` (string, optional)
-  - `fileSize` (number, optional)
-  - `description` (string, optional)
-- Response: `ApiResponse<CaseEvidenceItem>`
-- Success message: `Evidence updated successfully`
-- Notes:
-  - `evidenceId` must belong to the specified `caseId`.
+---
 
-### DELETE `/api/cases/{caseId}/evidences/{evidenceId}`
-- Auth: required
-- Path: `caseId` (number), `evidenceId` (number)
-- Body: none
-- Response: `ApiResponse<Void>`
-- Success message: `Evidence deleted successfully`
-- Notes:
-  - `evidenceId` must belong to the specified `caseId`.
+## 6.1 前端联调建议
 
-## 6.1 Frontend usage examples and permission suggestions
+- 角色码：`police_officer`（民警）、`legal_officer`（法制员）、`supervisor`（主管）、`admin`（管理员）
+- 对写接口建议统一传 `Idempotency-Key`
+- 前端按 `code != 200` 处理业务失败，即使 HTTP 状态码是 200
 
-角色码与中文展示名对应关系：
-- `police_officer` → 民警
-- `legal_officer` → 法制员
-- `supervisor` → 主管
-- `admin` → 管理员
+---
 
-### Permission matrix suggestion
-
-> 说明：下表是前端联动建议，便于控制按钮可见/可点/可执行；真正的数据安全仍以后端返回为准。
-
-| 操作 | 民警 | 法制员 | 主管 | 管理员 |
-| --- | --- | --- | --- | --- |
-| 案件删除 `DELETE /api/cases/{id}` | 隐藏 | 隐藏 | 隐藏 | 显示 / 可点 / 可执行 |
-| 证据修改 `PUT /api/cases/{caseId}/evidences/{evidenceId}` | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 |
-| 证据删除 `DELETE /api/cases/{caseId}/evidences/{evidenceId}` | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 | 显示 / 可点 / 可执行 |
-
-建议：
-- 案件删除前务必二次确认，因为这是硬删，且会级联删除该案件下的流程、证据与后续记录。
-- 证据修改/删除前，前端应先检查当前案件是否处于允许编辑的状态；如果已归档，可仅对管理员开放。
-- 若后端返回 `403`，前端应直接禁用或隐藏对应按钮，而不是继续弹窗提交。
-
-### 1) 案件删除示例
-
-#### Request
-
-```http
-DELETE /api/cases/101
-Authorization: Bearer <access_token>
-```
-
-#### Response
-
-```json
-{
-  "code": 200,
-  "message": "Case deleted successfully",
-  "data": null
-}
-```
-
-#### Frontend pseudo code
-
-```ts
-await api.delete(`/api/cases/${caseId}`)
-```
-
-### 2) 证据修改示例
-
-#### Request
-
-```http
-PUT /api/cases/101/evidences/1001
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "fileName": "现场视频-修订版.mp4",
-  "filePath": "/files/evidence/现场视频-修订版.mp4",
-  "fileType": "video/mp4",
-  "fileSize": 10485760,
-  "description": "补充了清晰版本"
-}
-```
-
-#### Response
-
-```json
-{
-  "code": 200,
-  "message": "Evidence updated successfully",
-  "data": {
-    "id": 1001,
-    "caseId": 101,
-    "fileName": "现场视频-修订版.mp4",
-    "filePath": "/files/evidence/现场视频-修订版.mp4",
-    "fileType": "video/mp4",
-    "fileSize": 10485760,
-    "uploadUserId": 12,
-    "uploadUserName": "张三",
-    "description": "补充了清晰版本",
-    "uploadedAt": "2026-04-08T10:30:00"
-  }
-}
-```
-
-#### Frontend pseudo code
-
-```ts
-await api.put(`/api/cases/${caseId}/evidences/${evidenceId}`, payload)
-```
-
-### 3) 证据删除示例
-
-#### Request
-
-```http
-DELETE /api/cases/101/evidences/1001
-Authorization: Bearer <access_token>
-```
-
-#### Response
-
-```json
-{
-  "code": 200,
-  "message": "Evidence deleted successfully",
-  "data": null
-}
-```
-
-#### Frontend pseudo code
-
-```ts
-await api.delete(`/api/cases/${caseId}/evidences/${evidenceId}`)
-```
-
-### Error handling tips for frontend
-
-- `400`：参数校验失败或业务规则不满足，直接展示后端 message。
-- `403`：当前角色无权限，建议禁用按钮或隐藏入口，并提示“当前角色无此操作权限”。
-- `404`：案件或证据不存在，提示后刷新列表或返回上一层。
-- 删除类操作成功后，建议刷新案件详情与证据列表，避免页面残留旧数据。
-
-### POST `/api/cases/{id}/legal-review/submit`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body (`LegalReviewSubmitRequest`):
-  - `comment` (string, required)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Legal review submitted successfully`
-
-### POST `/api/cases/{id}/legal-review/approve`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body (`LegalReviewApproveRequest`):
-  - `comment` (string, required)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Legal review approved successfully`
-
-### POST `/api/cases/{id}/legal-review/reject`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body (`LegalReviewRejectRequest`):
-  - `reason` (string, required)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Legal review rejected successfully`
-
-### POST `/api/cases/{id}/decision`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body (`SaveDecisionRequest`):
-  - `decisionResult` (string, required)
-  - `decisionContent` (string, required)
-  - `coerciveMeasureCode` (string, optional)
-  - `decidedAt` (string datetime, optional)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Decision saved successfully`
-
-### POST `/api/cases/{id}/execution`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body (`RecordExecutionRequest`):
-  - `executionResult` (string, required)
-  - `executionNote` (string, optional)
-  - `executedAt` (string datetime, optional)
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Execution recorded successfully`
-
-### POST `/api/cases/{id}/archive`
-- Auth: required
-- Path: `id` (number)
-- Header (optional): `Idempotency-Key`
-- Body: none
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case archived successfully`
-
-### POST `/api/cases/{id}/unarchive`
-- Auth: required
-- Path: `id` (number)
-- Body: none
-- Response: `ApiResponse<CaseDetailResponse>`
-- Success message: `Case unarchived successfully`
-
-## 6.2 Workflow APIs (`/api/workflows`, standard approval chain)
-
-The workflow engine supports multi-stage approval with role nodes (for example `police_officer -> legal_officer -> supervisor`).
+## 6.2 工作流接口（`/api/workflows`）
 
 ### POST `/api/cases/{id}/workflows/{flowType}/start`
-- Auth: required
-- Header (optional but recommended): `Idempotency-Key`
-- Path:
-  - `id` (number)
-  - `flowType` (string, enum): `ACCEPTANCE_REVIEW`, `FILING_REVIEW`, `LEGAL_AUDIT_REVIEW`, `DECISION_REVIEW`, `EXECUTION_REVIEW`, `ARCHIVE_REVIEW`
-- Body (`StartCaseWorkflowRequest`):
-  - `comment` (string, optional)
-- Response: `ApiResponse<WorkflowInstanceResponse>`
-- Success message: `Workflow started successfully`
+- 鉴权：需要登录
+- 请求头（推荐）：`Idempotency-Key`
+- `flowType` 可选值：
+  - `ACCEPTANCE_REVIEW`
+  - `FILING_REVIEW`
+  - `LEGAL_AUDIT_REVIEW`
+  - `DECISION_REVIEW`
+  - `EXECUTION_REVIEW`
+  - `ARCHIVE_REVIEW`
+- 请求体（`StartCaseWorkflowRequest`）：`comment` 可选
+- 响应：`ApiResponse<WorkflowInstanceResponse>`
 
 ### GET `/api/cases/{id}/workflows`
-- Auth: required
-- Path: `id` (number)
-- Response: `ApiResponse<List<WorkflowInstanceResponse>>`
-
 ### GET `/api/workflows/instances/{instanceId}`
-- Auth: required
-- Path: `instanceId` (number)
-- Response: `ApiResponse<WorkflowInstanceResponse>`
-
 ### GET `/api/workflows/tasks/my-pending`
-- Auth: required
-- Response: `ApiResponse<List<PendingWorkflowTaskItem>>`
+- 鉴权：需要登录
 
 ### POST `/api/workflows/tasks/{taskId}/approve`
-- Auth: required
-- Header (optional but recommended): `Idempotency-Key`
-- Body (`WorkflowActionRequest`):
-  - `comment` (string, optional)
-- Response: `ApiResponse<WorkflowInstanceResponse>`
-- Success message: `Task approved successfully`
-
 ### POST `/api/workflows/tasks/{taskId}/reject`
-- Auth: required
-- Header (optional but recommended): `Idempotency-Key`
-- Body (`WorkflowActionRequest`):
-  - `comment` (string, required by business rule)
-- Response: `ApiResponse<WorkflowInstanceResponse>`
-- Success message: `Task rejected successfully`
+- 鉴权：需要登录
+- 请求头（推荐）：`Idempotency-Key`
+- 请求体（`WorkflowActionRequest`）：`comment`
 
 ---
 
-## 7. Statistics APIs (`/api/statistics`)
+## 7. 统计接口（`/api/statistics`）
 
-All endpoints require auth.
-
-### GET `/api/statistics/cases-overview`
-- Query:
-  - `startTime` (ISO datetime, optional)
-  - `endTime` (ISO datetime, optional)
-  - `granularity` (string, optional, default `DAY`)
-- Response: `ApiResponse<CasesOverviewResponse>`
-
-### GET `/api/statistics/region-hotspots`
-- Query:
-  - `startTime` (ISO datetime, optional)
-  - `endTime` (ISO datetime, optional)
-  - `topN` (number, optional)
-- Response: `ApiResponse<List<RegionHotspotItem>>`
-
-### GET `/api/statistics/officer-efficiency`
-- Query:
-  - `startTime` (ISO datetime, optional)
-  - `endTime` (ISO datetime, optional)
-  - `topN` (number, optional)
-- Response: `ApiResponse<List<OfficerEfficiencyItem>>`
-
-### GET `/api/statistics/review-pass-rate`
-- Query:
-  - `startTime` (ISO datetime, optional)
-  - `endTime` (ISO datetime, optional)
-- Response: `ApiResponse<List<ReviewPassRateItem>>`
+- 均需登录鉴权。
+- 包含：
+  - `GET /api/statistics/cases-overview`
+  - `GET /api/statistics/region-hotspots`
+  - `GET /api/statistics/officer-efficiency`
+  - `GET /api/statistics/review-pass-rate`
 
 ---
 
-## 8. Dictionary API (`/api/dictionaries`)
+## 8. 字典接口（`/api/dictionaries`）
 
 ### GET `/api/dictionaries/case-types`
-- Auth: required
-- Query: none
-- Response: `ApiResponse<List<CaseTypeItem>>`
+- 鉴权：需要登录
+- 响应：`ApiResponse<List<CaseTypeItem>>`
 
 ---
 
-## 9. DashScope APIs (`/api/dashscope`)
+## 9. DashScope 接口（`/api/dashscope`）
 
-These endpoints are public in current security config.
-
-### POST `/api/dashscope/chat`
-- Auth: public
-- Body (`ChatCompletionRequest`):
-  - `model` (string, optional, default `qwen-plus`)
-  - `messages` (array of `ChatMessage`, optional in DTO but required by business usage)
-    - `role` (string)
-    - `content` (string)
-  - `maxTokens` (number, optional)
-  - `temperature` (number, optional)
-- Response: `ApiResponse<ChatCompletionResponse>`
-
-### POST `/api/dashscope/prompt`
-- Auth: public
-- Body (`PromptRequest`):
-  - `prompt` (string, required)
-  - `model` (string, optional)
-- Response: `ApiResponse<ChatCompletionResponse>`
+- 当前为公开接口（不需要登录）。
+- 包含：
+  - `POST /api/dashscope/chat`
+  - `POST /api/dashscope/prompt`
 
 ---
 
-## 10. Frontend integration quick examples
+## 10. 联调示例
 
-### Login then call protected API
+### 登录后访问受保护接口
 
 ```http
 POST /api/auth/login
@@ -767,7 +408,7 @@ GET /api/users/me
 Authorization: Bearer <token_from_login>
 ```
 
-### Typical paged list call
+### 分页查询案件
 
 ```http
 GET /api/cases?page=1&size=10&status=REGISTERED
@@ -776,13 +417,12 @@ Authorization: Bearer <token>
 
 ---
 
-## 11. AI prompt guidance for this API
+## 11. AI 调用提示
 
-When asking AI to generate client calls:
-- Always use `ApiResponse<T>` envelope parsing.
-- For protected APIs include `Authorization: Bearer <token>`.
-- Treat `code != 200` as business failure even if HTTP status is 200.
-- Use ISO-8601 strings for datetime request fields.
-- Keep JWT subject identity aligned to `name` (not user id).
+- 始终按 `ApiResponse<T>` 包络解析返回。
+- 受保护接口必须带 `Authorization: Bearer <token>`。
+- 即使 HTTP 200，只要 `code != 200` 也视为业务失败。
+- 日期时间字段使用 ISO-8601 字符串。
+- JWT 主体身份以 `name` 为准，不要改成 user id。
 
 
