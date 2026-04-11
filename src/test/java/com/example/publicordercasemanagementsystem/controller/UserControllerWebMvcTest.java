@@ -83,7 +83,7 @@ class UserControllerWebMvcTest {
     @Test
     void getCurrentUserShouldReturnCurrentUserInfo() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("alice", null, List.of())
+                new UsernamePasswordAuthenticationToken("1", null, List.of())
         );
 
         UserInfo userInfo = new UserInfo();
@@ -91,7 +91,7 @@ class UserControllerWebMvcTest {
         userInfo.setName("alice");
         userInfo.setRole("ADMIN");
 
-        when(userService.getUserInfoByName(eq("alice"))).thenReturn(userInfo);
+        when(userService.getUserInfoById(eq(1L))).thenReturn(userInfo);
 
         mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isOk())
@@ -105,10 +105,10 @@ class UserControllerWebMvcTest {
         userInfo.setId(7L);
         userInfo.setName("bob");
         userInfo.setRole("supervisor");
-        when(userService.updateUserRole(eq(7L), any(), eq("admin"))).thenReturn(userInfo);
+        when(userService.updateUserRole(eq(7L), any(), eq(1L))).thenReturn(userInfo);
 
         mockMvc.perform(put("/api/users/7/role")
-                        .with(authenticatedUser("admin"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"role\":\"supervisor\"}"))
                 .andExpect(status().isOk())
@@ -118,10 +118,10 @@ class UserControllerWebMvcTest {
 
     @Test
     void changePasswordShouldReturnSuccessMessage() throws Exception {
-        doNothing().when(userService).changeUserPassword(eq(9L), any(), eq("admin"));
+        doNothing().when(userService).changeUserPassword(eq(9L), any(), eq(1L));
 
         mockMvc.perform(put("/api/users/9/password")
-                        .with(authenticatedUser("admin"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"password\":\"NewPass@123\",\"confirmPassword\":\"NewPass@123\"}"))
                 .andExpect(status().isOk())
@@ -130,17 +130,17 @@ class UserControllerWebMvcTest {
 
     @Test
     void deleteUserShouldReturnSuccessMessage() throws Exception {
-        doNothing().when(userService).deleteUser(eq(9L), eq("admin"));
+        doNothing().when(userService).deleteUser(eq(9L), eq(1L));
 
-        mockMvc.perform(delete("/api/users/9").with(authenticatedUser("admin")))
+        mockMvc.perform(delete("/api/users/9").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User deleted successfully"));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };

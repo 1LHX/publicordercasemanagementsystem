@@ -71,10 +71,10 @@ class RoleControllerWebMvcTest {
         RoleItem item = new RoleItem();
         item.setCode("auditor");
         item.setName("Auditor");
-        when(roleService.createRole(any(), eq("admin"))).thenReturn(item);
+        when(roleService.createRole(any(), eq(1L))).thenReturn(item);
 
         mockMvc.perform(post("/api/roles")
-                        .with(authenticatedUser("admin"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"code\":\"auditor\",\"name\":\"Auditor\"}"))
                 .andExpect(status().isOk())
@@ -84,11 +84,11 @@ class RoleControllerWebMvcTest {
 
     @Test
     void createRoleShouldReturn403WhenServiceDeniesPermission() throws Exception {
-        when(roleService.createRole(any(), eq("police")))
+        when(roleService.createRole(any(), eq(2L)))
                 .thenThrow(new AuthException(403, "当前角色无此操作权限。"));
 
         mockMvc.perform(post("/api/roles")
-                        .with(authenticatedUser("police"))
+                        .with(authenticatedUser(2L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"code\":\"auditor\",\"name\":\"Auditor\"}"))
                 .andExpect(status().isForbidden())
@@ -98,17 +98,17 @@ class RoleControllerWebMvcTest {
 
     @Test
     void deleteRoleShouldReturnSuccessMessage() throws Exception {
-        doNothing().when(roleService).deleteRole(eq("auditor"), eq("admin"));
+        doNothing().when(roleService).deleteRole(eq("auditor"), eq(1L));
 
-        mockMvc.perform(delete("/api/roles/auditor").with(authenticatedUser("admin")))
+        mockMvc.perform(delete("/api/roles/auditor").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Role deleted successfully"));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };

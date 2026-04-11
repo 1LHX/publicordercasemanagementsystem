@@ -82,9 +82,9 @@ class UserControllerBranchWebMvcTest {
     @Test
     void getCurrentUserShouldReturnUserNotFoundBusinessError() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("alice", null, List.of())
+                new UsernamePasswordAuthenticationToken("1", null, List.of())
         );
-        when(userService.getUserInfoByName("alice")).thenReturn(null);
+        when(userService.getUserInfoById(1L)).thenReturn(null);
 
         mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isUnauthorized())

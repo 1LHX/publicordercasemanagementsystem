@@ -59,17 +59,17 @@ class CaseServiceImplWorkflowCompatTest {
         accepted.setStatus("ACCEPTED");
 
         when(caseMapper.findById(101L)).thenReturn(registered, accepted);
-        when(userMapper.findByName("supervisor_chen")).thenReturn(supervisor);
+        when(userMapper.findById(5L)).thenReturn(supervisor);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Idempotency-Key", "acc-101");
 
-        CaseDetailResponse response = caseService.acceptCase(101L, "supervisor_chen", request);
+        CaseDetailResponse response = caseService.acceptCase(101L, 5L, request);
 
         verify(caseWorkflowService).startCaseWorkflow(eq(101L), eq("ACCEPTANCE_REVIEW"), any(),
-                eq("supervisor_chen"), eq("acc-101"), eq(request));
+                eq(5L), eq("acc-101"), eq(request));
         verify(caseWorkflowService).approveCaseWorkflow(eq(101L), eq("ACCEPTANCE_REVIEW"), any(),
-                eq("supervisor_chen"), eq("acc-101-approve"), eq(request));
+                eq(5L), eq("acc-101-approve"), eq(request));
         assertEquals("ACCEPTED", response.getStatus());
     }
 
@@ -86,10 +86,10 @@ class CaseServiceImplWorkflowCompatTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Idempotency-Key", "lr-101");
 
-        caseService.submitLegalReview(101L, requestBody, "officer_wang", request);
+        caseService.submitLegalReview(101L, requestBody, 7L, request);
 
         verify(caseWorkflowService).startCaseWorkflow(eq(101L), eq("LEGAL_AUDIT_REVIEW"), any(),
-                eq("officer_wang"), eq("lr-101"), eq(request));
+                eq(7L), eq("lr-101"), eq(request));
     }
 
     @Test
@@ -100,7 +100,7 @@ class CaseServiceImplWorkflowCompatTest {
         when(caseMapper.findById(101L)).thenReturn(record);
 
         assertThrows(AuthException.class, () -> caseService.transitionStatus(101L,
-                buildTransitionToDecided(), "officer_wang", new MockHttpServletRequest()));
+                buildTransitionToDecided(), 7L, new MockHttpServletRequest()));
     }
 
     private com.example.publicordercasemanagementsystem.dto.StatusTransitionRequest buildTransitionToDecided() {

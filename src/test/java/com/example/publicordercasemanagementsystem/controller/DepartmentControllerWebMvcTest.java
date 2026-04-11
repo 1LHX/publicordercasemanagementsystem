@@ -72,10 +72,10 @@ class DepartmentControllerWebMvcTest {
         DepartmentItem item = new DepartmentItem();
         item.setId(9L);
         item.setName("Traffic Patrol Unit");
-        when(departmentService.createDepartment(any(), eq("admin"))).thenReturn(item);
+        when(departmentService.createDepartment(any(), eq(1L))).thenReturn(item);
 
         mockMvc.perform(post("/api/departments")
-                        .with(authenticatedUser("admin"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"name\":\"Traffic Patrol Unit\",\"parentId\":1}"))
                 .andExpect(status().isOk())
@@ -85,11 +85,11 @@ class DepartmentControllerWebMvcTest {
 
     @Test
     void createDepartmentShouldReturn403WhenUnauthorized() throws Exception {
-        when(departmentService.createDepartment(any(), eq("police_officer")))
+        when(departmentService.createDepartment(any(), eq(2L)))
                 .thenThrow(new AuthException(403, "当前角色无此操作权限。"));
 
         mockMvc.perform(post("/api/departments")
-                        .with(authenticatedUser("police_officer"))
+                        .with(authenticatedUser(2L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"name\":\"Traffic Patrol Unit\"}"))
                 .andExpect(status().isForbidden())
@@ -99,9 +99,9 @@ class DepartmentControllerWebMvcTest {
 
     @Test
     void deleteDepartmentShouldReturnSuccessMessage() throws Exception {
-        doNothing().when(departmentService).deleteDepartment(eq(9L), eq("admin"));
+        doNothing().when(departmentService).deleteDepartment(eq(9L), eq(1L));
 
-        mockMvc.perform(delete("/api/departments/9").with(authenticatedUser("admin")))
+        mockMvc.perform(delete("/api/departments/9").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Department deleted successfully"));
     }
@@ -111,10 +111,10 @@ class DepartmentControllerWebMvcTest {
         DepartmentItem item = new DepartmentItem();
         item.setId(9L);
         item.setIsActive(false);
-        when(departmentService.updateDepartmentStatus(eq(9L), any(), eq("admin"))).thenReturn(item);
+        when(departmentService.updateDepartmentStatus(eq(9L), any(), eq(1L))).thenReturn(item);
 
         mockMvc.perform(put("/api/departments/9/status")
-                        .with(authenticatedUser("admin"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content("{\"isActive\":false}"))
                 .andExpect(status().isOk())
@@ -122,10 +122,10 @@ class DepartmentControllerWebMvcTest {
                 .andExpect(jsonPath("$.data.isActive").value(false));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };

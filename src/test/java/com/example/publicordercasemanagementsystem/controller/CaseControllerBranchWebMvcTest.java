@@ -59,11 +59,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void createCaseShouldReturnBusinessError() throws Exception {
-        when(caseService.createCase(any(), eq("alice"), any()))
+        when(caseService.createCase(any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Case number already exists"));
 
         mockMvc.perform(post("/api/cases")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validCreateCaseRequest()))
                 .andExpect(status().isConflict())
@@ -224,7 +224,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void deleteCaseShouldReturnOk() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101")
-                        .with(authenticatedUser("alice")))
+                        .with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("Case deleted successfully"));
@@ -233,10 +233,10 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void deleteCaseShouldReturnBusinessError() throws Exception {
         org.mockito.Mockito.doThrow(new AuthException(404, "Case not found"))
-                .when(caseService).deleteCase(eq(101L), eq("alice"));
+                .when(caseService).deleteCase(eq(101L), eq(1L));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101")
-                        .with(authenticatedUser("alice")))
+                        .with(authenticatedUser(1L)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404));
     }
@@ -253,7 +253,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void transitionStatusShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/status-transitions")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -262,11 +262,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void transitionStatusShouldReturnBusinessError() throws Exception {
-        when(caseService.transitionStatus(eq(101L), any(), eq("alice"), any()))
+        when(caseService.transitionStatus(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Illegal status transition"));
 
         mockMvc.perform(post("/api/cases/101/status-transitions")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"toStatus\":\"IN_REVIEW\"}"))
                 .andExpect(status().isConflict())
@@ -305,7 +305,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void addEvidenceShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/evidences")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -314,11 +314,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void addEvidenceShouldReturnBusinessError() throws Exception {
-        when(caseService.addEvidence(eq(101L), any(), eq("alice")))
+        when(caseService.addEvidence(eq(101L), any(), eq(1L)))
                 .thenThrow(new AuthException(409, "Evidence already exists"));
 
         mockMvc.perform(post("/api/cases/101/evidences")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validEvidenceRequest()))
                 .andExpect(status().isConflict())
@@ -329,10 +329,10 @@ class CaseControllerBranchWebMvcTest {
     void updateEvidenceShouldReturnOk() throws Exception {
         CaseEvidenceItem item = new CaseEvidenceItem();
         item.setId(11L);
-        when(caseService.updateEvidence(eq(101L), eq(11L), any(), eq("alice"))).thenReturn(item);
+        when(caseService.updateEvidence(eq(101L), eq(11L), any(), eq(1L))).thenReturn(item);
 
         mockMvc.perform(put("/api/cases/101/evidences/11")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateEvidenceRequest()))
                 .andExpect(status().isOk())
@@ -343,7 +343,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void deleteEvidenceShouldReturnOk() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/cases/101/evidences/11")
-                        .with(authenticatedUser("alice")))
+                        .with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("Evidence deleted successfully"));
@@ -381,7 +381,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void submitLegalReviewShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/legal-review/submit")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -390,11 +390,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void submitLegalReviewShouldReturnBusinessError() throws Exception {
-        when(caseService.submitLegalReview(eq(101L), any(), eq("alice"), any()))
+        when(caseService.submitLegalReview(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Review already submitted"));
 
         mockMvc.perform(post("/api/cases/101/legal-review/submit")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"ok\"}"))
                 .andExpect(status().isConflict())
@@ -413,7 +413,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void approveLegalReviewShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/legal-review/approve")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -422,11 +422,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void approveLegalReviewShouldReturnBusinessError() throws Exception {
-        when(caseService.approveLegalReview(eq(101L), any(), eq("alice"), any()))
+        when(caseService.approveLegalReview(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Case not in review"));
 
         mockMvc.perform(post("/api/cases/101/legal-review/approve")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"approved\"}"))
                 .andExpect(status().isConflict())
@@ -445,7 +445,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void rejectLegalReviewShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/legal-review/reject")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -454,11 +454,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void rejectLegalReviewShouldReturnBusinessError() throws Exception {
-        when(caseService.rejectLegalReview(eq(101L), any(), eq("alice"), any()))
+        when(caseService.rejectLegalReview(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Case not in review"));
 
         mockMvc.perform(post("/api/cases/101/legal-review/reject")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\":\"lack evidence\"}"))
                 .andExpect(status().isConflict())
@@ -477,7 +477,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void saveDecisionShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/decision")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -486,11 +486,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void saveDecisionShouldReturnBusinessError() throws Exception {
-        when(caseService.saveDecision(eq(101L), any(), eq("alice"), any()))
+        when(caseService.saveDecision(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Decision not allowed"));
 
         mockMvc.perform(post("/api/cases/101/decision")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validDecisionRequest()))
                 .andExpect(status().isConflict())
@@ -509,7 +509,7 @@ class CaseControllerBranchWebMvcTest {
     @Test
     void recordExecutionShouldReturnValidationFailed() throws Exception {
         mockMvc.perform(post("/api/cases/101/execution")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -518,11 +518,11 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void recordExecutionShouldReturnBusinessError() throws Exception {
-        when(caseService.recordExecution(eq(101L), any(), eq("alice"), any()))
+        when(caseService.recordExecution(eq(101L), any(), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Execution not allowed"));
 
         mockMvc.perform(post("/api/cases/101/execution")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"executionResult\":\"DONE\"}"))
                 .andExpect(status().isConflict())
@@ -538,18 +538,18 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void unarchiveCaseShouldReturnBusinessError() throws Exception {
-        when(caseService.unarchiveCase(eq(101L), eq("alice"), any()))
+        when(caseService.unarchiveCase(eq(101L), eq(1L), any()))
                 .thenThrow(new AuthException(409, "Case is not archived"));
 
-        mockMvc.perform(post("/api/cases/101/unarchive").with(authenticatedUser("alice")))
+        mockMvc.perform(post("/api/cases/101/unarchive").with(authenticatedUser(1L)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };

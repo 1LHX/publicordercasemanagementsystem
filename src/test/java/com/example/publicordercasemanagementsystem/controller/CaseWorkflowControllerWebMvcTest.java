@@ -62,10 +62,10 @@ class CaseWorkflowControllerWebMvcTest {
         response.setStatus("PENDING");
 
         when(caseWorkflowService.startCaseWorkflow(eq(101L), eq("FILING_REVIEW"), any(StartCaseWorkflowRequest.class),
-                eq("alice"), eq("req-1"), any())).thenReturn(response);
+                eq(1L), eq("req-1"), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/cases/101/workflows/FILING_REVIEW/start")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", "req-1")
                         .content("{\"comment\":\"submit\"}"))
@@ -80,9 +80,9 @@ class CaseWorkflowControllerWebMvcTest {
         PendingWorkflowTaskItem item = new PendingWorkflowTaskItem();
         item.setTaskId(11L);
         item.setFlowType("FILING_REVIEW");
-        when(caseWorkflowService.listPendingTasks("alice")).thenReturn(List.of(item));
+        when(caseWorkflowService.listPendingTasks(1L)).thenReturn(List.of(item));
 
-        mockMvc.perform(get("/api/workflows/tasks/my-pending").with(authenticatedUser("alice")))
+        mockMvc.perform(get("/api/workflows/tasks/my-pending").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].taskId").value(11));
@@ -94,10 +94,10 @@ class CaseWorkflowControllerWebMvcTest {
         response.setId(1L);
         response.setStatus("APPROVED");
         when(caseWorkflowService.approveTask(eq(11L), any(WorkflowActionRequest.class),
-                eq("alice"), eq("req-2"), any())).thenReturn(response);
+                eq(1L), eq("req-2"), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/workflows/tasks/11/approve")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", "req-2")
                         .content("{\"comment\":\"ok\"}"))
@@ -106,10 +106,10 @@ class CaseWorkflowControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Task approved successfully"));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };

@@ -54,7 +54,7 @@ class CaseControllerWebMvcTest {
     @Test
     void createCaseShouldReturnCreatedEnvelope() throws Exception {
         CaseDetailResponse response = buildCaseDetail(101L, "GA-2026-0001", "REGISTERED");
-        when(caseService.createCase(any(CreateCaseRequest.class), eq("alice"), any())).thenReturn(response);
+        when(caseService.createCase(any(CreateCaseRequest.class), eq(1L), any())).thenReturn(response);
 
         String requestBody = """
                 {
@@ -66,7 +66,7 @@ class CaseControllerWebMvcTest {
                 """;
 
         mockMvc.perform(post("/api/cases")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
@@ -87,7 +87,7 @@ class CaseControllerWebMvcTest {
                 """;
 
         mockMvc.perform(post("/api/cases")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
@@ -98,9 +98,9 @@ class CaseControllerWebMvcTest {
     @Test
     void acceptCaseShouldReturnAcceptedEnvelope() throws Exception {
         CaseDetailResponse response = buildCaseDetail(101L, "GA-2026-0001", "ACCEPTED");
-        when(caseService.acceptCase(eq(101L), eq("alice"), any())).thenReturn(response);
+        when(caseService.acceptCase(eq(101L), eq(1L), any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/cases/101/accept").with(authenticatedUser("alice")))
+        mockMvc.perform(post("/api/cases/101/accept").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("Case accepted successfully"))
@@ -111,7 +111,7 @@ class CaseControllerWebMvcTest {
     void assignCaseShouldReturnAssignedEnvelope() throws Exception {
         CaseDetailResponse response = buildCaseDetail(101L, "GA-2026-0001", "ACCEPTED");
         response.setHandlingOfficerId(6L);
-        when(caseService.assignCase(eq(101L), any(AssignCaseRequest.class), eq("alice"), any())).thenReturn(response);
+        when(caseService.assignCase(eq(101L), any(AssignCaseRequest.class), eq(1L), any())).thenReturn(response);
 
         String requestBody = """
                 {
@@ -120,7 +120,7 @@ class CaseControllerWebMvcTest {
                 """;
 
         mockMvc.perform(post("/api/cases/101/assign")
-                        .with(authenticatedUser("alice"))
+                        .with(authenticatedUser(1L))
                         .contentType(APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
@@ -132,9 +132,9 @@ class CaseControllerWebMvcTest {
     @Test
     void archiveCaseShouldReturnArchivedEnvelope() throws Exception {
         CaseDetailResponse response = buildCaseDetail(101L, "GA-2026-0001", "ARCHIVED");
-        when(caseService.archiveCase(eq(101L), eq("alice"), any())).thenReturn(response);
+        when(caseService.archiveCase(eq(101L), eq(1L), any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/cases/101/archive").with(authenticatedUser("alice")))
+        mockMvc.perform(post("/api/cases/101/archive").with(authenticatedUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("Case archived successfully"))
@@ -149,10 +149,10 @@ class CaseControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Unauthenticated"));
     }
 
-    private RequestPostProcessor authenticatedUser(String userName) {
+    private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(userName, null, List.of())
+                    new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, List.of())
             );
             return request;
         };
