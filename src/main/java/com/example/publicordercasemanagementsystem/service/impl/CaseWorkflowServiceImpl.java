@@ -61,10 +61,10 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     public WorkflowInstanceResponse startCaseWorkflow(Long caseId,
                                                       String flowType,
                                                       StartCaseWorkflowRequest request,
-                                                      String operatorName,
+                                                      Long operatorUserId,
                                                       String idempotencyKey,
                                                       HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         validateIdempotency(idempotencyKey);
 
         String normalizedFlowType = normalizeFlowType(flowType);
@@ -120,10 +120,10 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     @Transactional
     public WorkflowInstanceResponse approveTask(Long taskId,
                                                 WorkflowActionRequest request,
-                                                String operatorName,
+                                                Long operatorUserId,
                                                 String idempotencyKey,
                                                 HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         validateIdempotency(idempotencyKey);
 
         CaseWorkflowTask task = requireTodoTask(taskId);
@@ -176,10 +176,10 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     public WorkflowInstanceResponse approveCaseWorkflow(Long caseId,
                                                         String flowType,
                                                         WorkflowActionRequest request,
-                                                        String operatorName,
+                                                        Long operatorUserId,
                                                         String idempotencyKey,
                                                         HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         String normalizedFlowType = normalizeFlowType(flowType);
         CaseWorkflowTask task = ADMIN_ROLE.equals(operator.getRole())
                 ? workflowMapper.findTodoTaskByCaseFlow(caseId, normalizedFlowType)
@@ -187,17 +187,17 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
         if (task == null) {
             throw new AuthException(404, "No pending task for current operator and flow");
         }
-        return approveTask(task.getId(), request, operatorName, idempotencyKey, httpRequest);
+        return approveTask(task.getId(), request, operatorUserId, idempotencyKey, httpRequest);
     }
 
     @Override
     @Transactional
     public WorkflowInstanceResponse rejectTask(Long taskId,
                                                WorkflowActionRequest request,
-                                               String operatorName,
+                                               Long operatorUserId,
                                                String idempotencyKey,
                                                HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         validateIdempotency(idempotencyKey);
 
         CaseWorkflowTask task = requireTodoTask(taskId);
@@ -240,10 +240,10 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     public WorkflowInstanceResponse rejectCaseWorkflow(Long caseId,
                                                        String flowType,
                                                        WorkflowActionRequest request,
-                                                       String operatorName,
+                                                       Long operatorUserId,
                                                        String idempotencyKey,
                                                        HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         String normalizedFlowType = normalizeFlowType(flowType);
         CaseWorkflowTask task = ADMIN_ROLE.equals(operator.getRole())
                 ? workflowMapper.findTodoTaskByCaseFlow(caseId, normalizedFlowType)
@@ -251,7 +251,7 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
         if (task == null) {
             throw new AuthException(404, "No pending task for current operator and flow");
         }
-        return rejectTask(task.getId(), request, operatorName, idempotencyKey, httpRequest);
+        return rejectTask(task.getId(), request, operatorUserId, idempotencyKey, httpRequest);
     }
 
     @Override
@@ -304,8 +304,8 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
     }
 
     @Override
-    public List<PendingWorkflowTaskItem> listPendingTasks(String operatorName) {
-        User operator = requireOperator(operatorName);
+    public List<PendingWorkflowTaskItem> listPendingTasks(Long operatorUserId) {
+        User operator = requireOperator(operatorUserId);
         List<CaseWorkflowTask> tasks = workflowMapper.findPendingTasksByRole(operator.getRole());
         List<PendingWorkflowTaskItem> items = new ArrayList<>(tasks.size());
         for (CaseWorkflowTask task : tasks) {
@@ -382,7 +382,8 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
         } else if ("FILING_REVIEW".equals(flowType)) {
             expected = List.of("ACCEPTED");
         } else if ("LEGAL_AUDIT_REVIEW".equals(flowType)) {
-            expected = List.of("INVESTIGATING");
+            // Backward compatible: old approved filing flows leave case in FILED.
+            expected = List.of("INVESTIGATING", "FILED");
         } else if ("DECISION_REVIEW".equals(flowType)) {
             expected = List.of("LEGAL_AUDIT_PASSED", "LEGAL_REVIEW");
         } else if ("EXECUTION_REVIEW".equals(flowType)) {
@@ -456,11 +457,11 @@ public class CaseWorkflowServiceImpl implements CaseWorkflowService {
         return flowType.trim().toUpperCase();
     }
 
-    private User requireOperator(String operatorName) {
-        if (operatorName == null || operatorName.isBlank()) {
+    private User requireOperator(Long operatorUserId) {
+        if (operatorUserId == null) {
             throw new AuthException(401, "Unauthenticated");
         }
-        User user = userMapper.findByName(operatorName);
+        User user = userMapper.findById(operatorUserId);
         if (user == null || !Boolean.TRUE.equals(user.getIsActive())) {
             throw new AuthException(401, "Operator not found or inactive");
         }

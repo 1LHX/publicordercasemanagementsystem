@@ -67,17 +67,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserInfo getUserInfoByName(String name) {
-        if (name == null || name.isBlank()) {
+    public UserInfo getUserInfoById(Long id) {
+        if (id == null) {
             return null;
         }
-        User user = userMapper.findByName(name);
+        User user = userMapper.findById(id);
         return user == null ? null : toUserInfo(user);
     }
 
     @Override
-    public UserInfo updateUserName(Long id, UpdateUserNameRequest request, String operatorName) {
-        User operator = requireAdmin(operatorName);
+    public UserInfo updateUserName(Long id, UpdateUserNameRequest request, Long operatorUserId) {
+        User operator = requireAdmin(operatorUserId);
         User target = requireUserById(id);
 
         if (operator.getId().equals(id)) {
@@ -98,8 +98,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changeUserPassword(Long id, ChangePasswordRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public void changeUserPassword(Long id, ChangePasswordRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         requireUserById(id);
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new AuthException(400, "Passwords do not match");
@@ -109,8 +109,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserInfo updateUserRole(Long id, UpdateUserRoleRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public UserInfo updateUserRole(Long id, UpdateUserRoleRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         requireUserById(id);
 
         String roleCode = request.getRole().trim().toLowerCase(Locale.ROOT);
@@ -123,8 +123,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, String operatorName) {
-        User operator = requireAdmin(operatorName);
+    public UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, Long operatorUserId) {
+        User operator = requireAdmin(operatorUserId);
         requireUserById(id);
 
         if (operator.getId().equals(id) && !Boolean.TRUE.equals(request.getIsActive())) {
@@ -139,8 +139,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long id, String operatorName) {
-        User operator = requireAdmin(operatorName);
+    public void deleteUser(Long id, Long operatorUserId) {
+        User operator = requireAdmin(operatorUserId);
         requireUserById(id);
 
         if (operator.getId().equals(id)) {
@@ -149,8 +149,11 @@ public class UserServiceImpl implements UserService {
         userMapper.deleteById(id);
     }
 
-    private User requireAdmin(String operatorName) {
-        User operator = userMapper.findByName(operatorName);
+    private User requireAdmin(Long operatorUserId) {
+        if (operatorUserId == null) {
+            throw new AuthException(401, "Unauthenticated");
+        }
+        User operator = userMapper.findById(operatorUserId);
         if (operator == null || !ADMIN_ROLE.equals(operator.getRole())) {
             throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
         }

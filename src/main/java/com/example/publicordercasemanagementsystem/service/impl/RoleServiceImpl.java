@@ -46,8 +46,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleItem createRole(CreateRoleRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public RoleItem createRole(CreateRoleRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
 
         String code = normalizeRoleCode(request.getCode());
         if (roleMapper.findByCode(code) != null) {
@@ -64,8 +64,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleItem updateRole(String code, UpdateRoleRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public RoleItem updateRole(String code, UpdateRoleRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
 
         Role existing = requireRole(code);
         existing.setName(request.getName().trim());
@@ -75,8 +75,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleItem updateRoleStatus(String code, UpdateRoleStatusRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public RoleItem updateRoleStatus(String code, UpdateRoleStatusRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
 
         Role existing = requireRole(code);
         if (ADMIN_ROLE.equals(existing.getCode()) && !Boolean.TRUE.equals(request.getIsActive())) {
@@ -90,8 +90,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public void deleteRole(String code, String operatorName) {
-        requireAdmin(operatorName);
+    public void deleteRole(String code, Long operatorUserId) {
+        requireAdmin(operatorUserId);
 
         Role existing = requireRole(code);
         if (ADMIN_ROLE.equals(existing.getCode())) {
@@ -115,8 +115,11 @@ public class RoleServiceImpl implements RoleService {
         return role;
     }
 
-    private void requireAdmin(String operatorName) {
-        User operator = userMapper.findByName(operatorName);
+    private void requireAdmin(Long operatorUserId) {
+        if (operatorUserId == null) {
+            throw new AuthException(401, "Unauthenticated");
+        }
+        User operator = userMapper.findById(operatorUserId);
         if (operator == null || !ADMIN_ROLE.equals(operator.getRole())) {
             throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
         }

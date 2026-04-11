@@ -13,12 +13,12 @@ public interface RoleService {
 
     RoleItem getRoleByCode(String code);
 
-    RoleItem createRole(CreateRoleRequest request, String operatorName);
+    RoleItem createRole(CreateRoleRequest request, Long operatorUserId);
 
-    RoleItem updateRole(String code, UpdateRoleRequest request, String operatorName);
+    RoleItem updateRole(String code, UpdateRoleRequest request, Long operatorUserId);
 
-    RoleItem updateRoleStatus(String code, UpdateRoleStatusRequest request, String operatorName);
+    RoleItem updateRoleStatus(String code, UpdateRoleStatusRequest request, Long operatorUserId);
 
-    void deleteRole(String code, String operatorName);
+    void deleteRole(String code, Long operatorUserId);
 }
 

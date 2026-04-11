@@ -48,37 +48,41 @@ public class DepartmentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<DepartmentItem>> createDepartment(@Valid @RequestBody CreateDepartmentRequest request) {
-        DepartmentItem item = departmentService.createDepartment(request, getCurrentUserName());
+        DepartmentItem item = departmentService.createDepartment(request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(item, "Department created successfully"));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<DepartmentItem>> updateDepartment(@PathVariable Long id,
                                                                         @Valid @RequestBody UpdateDepartmentRequest request) {
-        DepartmentItem item = departmentService.updateDepartment(id, request, getCurrentUserName());
+        DepartmentItem item = departmentService.updateDepartment(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(item, "Department updated successfully"));
     }
 
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<DepartmentItem>> updateDepartmentStatus(@PathVariable Long id,
                                                                               @Valid @RequestBody UpdateDepartmentStatusRequest request) {
-        DepartmentItem item = departmentService.updateDepartmentStatus(id, request, getCurrentUserName());
+        DepartmentItem item = departmentService.updateDepartmentStatus(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(item, "Department status updated successfully"));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDepartment(@PathVariable Long id) {
-        departmentService.deleteDepartment(id, getCurrentUserName());
+        departmentService.deleteDepartment(id, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "Department deleted successfully"));
     }
 
-    private String getCurrentUserName() {
+    private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AuthException(401, "Unauthenticated");
         }
-        return authentication.getName();
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException ex) {
+            throw new AuthException(401, "Invalid authentication principal");
+        }
     }
 }
 

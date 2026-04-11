@@ -13,33 +13,33 @@ public interface CaseWorkflowService {
     WorkflowInstanceResponse startCaseWorkflow(Long caseId,
                                                String flowType,
                                                StartCaseWorkflowRequest request,
-                                               String operatorName,
+                                               Long operatorUserId,
                                                String idempotencyKey,
                                                HttpServletRequest httpRequest);
 
     WorkflowInstanceResponse approveTask(Long taskId,
                                          WorkflowActionRequest request,
-                                         String operatorName,
+                                          Long operatorUserId,
                                          String idempotencyKey,
                                          HttpServletRequest httpRequest);
 
     WorkflowInstanceResponse approveCaseWorkflow(Long caseId,
                                                  String flowType,
                                                  WorkflowActionRequest request,
-                                                 String operatorName,
+                                                 Long operatorUserId,
                                                  String idempotencyKey,
                                                  HttpServletRequest httpRequest);
 
     WorkflowInstanceResponse rejectTask(Long taskId,
                                         WorkflowActionRequest request,
-                                        String operatorName,
+                                         Long operatorUserId,
                                         String idempotencyKey,
                                         HttpServletRequest httpRequest);
 
     WorkflowInstanceResponse rejectCaseWorkflow(Long caseId,
                                                 String flowType,
                                                 WorkflowActionRequest request,
-                                                String operatorName,
+                                                Long operatorUserId,
                                                 String idempotencyKey,
                                                 HttpServletRequest httpRequest);
 
@@ -47,6 +47,6 @@ public interface CaseWorkflowService {
 
     List<WorkflowInstanceResponse> listCaseWorkflows(Long caseId);
 
-    List<PendingWorkflowTaskItem> listPendingTasks(String operatorName);
+    List<PendingWorkflowTaskItem> listPendingTasks(Long operatorUserId);
 }
 

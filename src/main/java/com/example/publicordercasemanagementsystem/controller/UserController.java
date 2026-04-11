@@ -49,7 +49,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfo>> getCurrentUser() {
-        UserInfo info = userService.getUserInfoByName(getCurrentUserName());
+        UserInfo info = userService.getUserInfoById(getCurrentUserId());
         if (info == null) {
             throw new AuthException(401, "User not found");
         }
@@ -59,43 +59,47 @@ public class UserController {
     @PutMapping("/{id}/name")
     public ResponseEntity<ApiResponse<UserInfo>> updateUserName(@PathVariable Long id,
                                                                 @Valid @RequestBody UpdateUserNameRequest request) {
-        UserInfo info = userService.updateUserName(id, request, getCurrentUserName());
+        UserInfo info = userService.updateUserName(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(info, "User name updated successfully"));
     }
 
     @PutMapping("/{id}/password")
     public ResponseEntity<ApiResponse<Void>> changeUserPassword(@PathVariable Long id,
                                                                 @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changeUserPassword(id, request, getCurrentUserName());
+        userService.changeUserPassword(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "User password updated successfully"));
     }
 
     @PutMapping("/{id}/role")
     public ResponseEntity<ApiResponse<UserInfo>> updateUserRole(@PathVariable Long id,
                                                                 @Valid @RequestBody UpdateUserRoleRequest request) {
-        UserInfo info = userService.updateUserRole(id, request, getCurrentUserName());
+        UserInfo info = userService.updateUserRole(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(info, "User role updated successfully"));
     }
 
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<UserInfo>> updateUserStatus(@PathVariable Long id,
                                                                   @Valid @RequestBody UpdateUserStatusRequest request) {
-        UserInfo info = userService.updateUserStatus(id, request, getCurrentUserName());
+        UserInfo info = userService.updateUserStatus(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(info, "User status updated successfully"));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id, getCurrentUserName());
+        userService.deleteUser(id, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "User deleted successfully"));
     }
 
-    private String getCurrentUserName() {
+    private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AuthException(401, "Unauthenticated");
         }
-        return authentication.getName();
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException ex) {
+            throw new AuthException(401, "Invalid authentication principal");
+        }
     }
 }

@@ -23,7 +23,7 @@ import java.util.List;
 
 public interface CaseService {
 
-    CaseDetailResponse createCase(CreateCaseRequest request, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse createCase(CreateCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest);
 
     PageResult<CaseListItem> listCases(String caseNumber,
                                        String title,
@@ -47,50 +47,50 @@ public interface CaseService {
 
     CaseDetailResponse updateCase(Long id, UpdateCaseRequest request);
 
-    void deleteCase(Long id, String operatorName);
+    void deleteCase(Long id, Long operatorUserId);
 
-    CaseDetailResponse acceptCase(Long id, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse acceptCase(Long id, Long operatorUserId, HttpServletRequest httpRequest);
 
-    CaseDetailResponse assignCase(Long id, AssignCaseRequest request, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse assignCase(Long id, AssignCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest);
 
-    CaseDetailResponse transitionStatus(Long id, StatusTransitionRequest request, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse transitionStatus(Long id, StatusTransitionRequest request, Long operatorUserId, HttpServletRequest httpRequest);
 
     List<CaseProcessItem> listProcesses(Long id);
 
-    CaseEvidenceItem addEvidence(Long id, CreateEvidenceRequest request, String operatorName);
+    CaseEvidenceItem addEvidence(Long id, CreateEvidenceRequest request, Long operatorUserId);
 
     List<CaseEvidenceItem> listEvidences(Long id);
 
-    CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, String operatorName);
+    CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, Long operatorUserId);
 
-    void deleteEvidence(Long caseId, Long evidenceId, String operatorName);
+    void deleteEvidence(Long caseId, Long evidenceId, Long operatorUserId);
 
     CaseDetailResponse submitLegalReview(Long id,
                                          LegalReviewSubmitRequest request,
-                                         String operatorName,
+                                         Long operatorUserId,
                                          HttpServletRequest httpRequest);
 
     CaseDetailResponse approveLegalReview(Long id,
                                           LegalReviewApproveRequest request,
-                                          String operatorName,
+                                          Long operatorUserId,
                                           HttpServletRequest httpRequest);
 
     CaseDetailResponse rejectLegalReview(Long id,
                                          LegalReviewRejectRequest request,
-                                         String operatorName,
+                                         Long operatorUserId,
                                          HttpServletRequest httpRequest);
 
     CaseDetailResponse saveDecision(Long id,
                                     SaveDecisionRequest request,
-                                    String operatorName,
+                                    Long operatorUserId,
                                     HttpServletRequest httpRequest);
 
     CaseDetailResponse recordExecution(Long id,
                                        RecordExecutionRequest request,
-                                       String operatorName,
+                                       Long operatorUserId,
                                        HttpServletRequest httpRequest);
 
-    CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse archiveCase(Long id, Long operatorUserId, HttpServletRequest httpRequest);
 
-    CaseDetailResponse unarchiveCase(Long id, String operatorName, HttpServletRequest httpRequest);
+    CaseDetailResponse unarchiveCase(Long id, Long operatorUserId, HttpServletRequest httpRequest);
 }

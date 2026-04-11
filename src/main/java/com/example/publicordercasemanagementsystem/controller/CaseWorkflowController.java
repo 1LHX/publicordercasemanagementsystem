@@ -40,7 +40,7 @@ public class CaseWorkflowController {
                                                                                    @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                                                                    HttpServletRequest httpRequest) {
         WorkflowInstanceResponse response = caseWorkflowService.startCaseWorkflow(
-                caseId, flowType, request, getCurrentUserName(), idempotencyKey, httpRequest
+                caseId, flowType, request, getCurrentUserId(), idempotencyKey, httpRequest
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "Workflow started successfully"));
     }
@@ -57,7 +57,7 @@ public class CaseWorkflowController {
 
     @GetMapping("/workflows/tasks/my-pending")
     public ResponseEntity<ApiResponse<List<PendingWorkflowTaskItem>>> listMyPendingTasks() {
-        return ResponseEntity.ok(ApiResponse.ok(caseWorkflowService.listPendingTasks(getCurrentUserName())));
+        return ResponseEntity.ok(ApiResponse.ok(caseWorkflowService.listPendingTasks(getCurrentUserId())));
     }
 
     @PostMapping("/workflows/tasks/{taskId}/approve")
@@ -66,7 +66,7 @@ public class CaseWorkflowController {
                                                                              @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                                                              HttpServletRequest httpRequest) {
         WorkflowInstanceResponse response = caseWorkflowService.approveTask(
-                taskId, request, getCurrentUserName(), idempotencyKey, httpRequest
+                taskId, request, getCurrentUserId(), idempotencyKey, httpRequest
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "Task approved successfully"));
     }
@@ -77,18 +77,22 @@ public class CaseWorkflowController {
                                                                             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
                                                                             HttpServletRequest httpRequest) {
         WorkflowInstanceResponse response = caseWorkflowService.rejectTask(
-                taskId, request, getCurrentUserName(), idempotencyKey, httpRequest
+                taskId, request, getCurrentUserId(), idempotencyKey, httpRequest
         );
         return ResponseEntity.ok(ApiResponse.ok(response, "Task rejected successfully"));
     }
 
-    private String getCurrentUserName() {
+    private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AuthException(401, "Unauthenticated");
         }
-        return authentication.getName();
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException ex) {
+            throw new AuthException(401, "Invalid authentication principal");
+        }
     }
 }
 

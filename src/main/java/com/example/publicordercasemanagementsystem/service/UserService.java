@@ -18,15 +18,15 @@ public interface UserService {
                                        Integer page,
                                        Integer size);
 
-    UserInfo getUserInfoByName(String name);
+    UserInfo getUserInfoById(Long id);
 
-    UserInfo updateUserName(Long id, UpdateUserNameRequest request, String operatorName);
+    UserInfo updateUserName(Long id, UpdateUserNameRequest request, Long operatorUserId);
 
-    void changeUserPassword(Long id, ChangePasswordRequest request, String operatorName);
+    void changeUserPassword(Long id, ChangePasswordRequest request, Long operatorUserId);
 
-    UserInfo updateUserRole(Long id, UpdateUserRoleRequest request, String operatorName);
+    UserInfo updateUserRole(Long id, UpdateUserRoleRequest request, Long operatorUserId);
 
-    UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, String operatorName);
+    UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, Long operatorUserId);
 
-    void deleteUser(Long id, String operatorName);
+    void deleteUser(Long id, Long operatorUserId);
 }

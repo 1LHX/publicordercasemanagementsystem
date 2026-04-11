@@ -46,8 +46,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public DepartmentItem createDepartment(CreateDepartmentRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public DepartmentItem createDepartment(CreateDepartmentRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         String name = normalizeName(request.getName());
         if (departmentMapper.findByName(name) != null) {
             throw new AuthException(400, "Department name already exists");
@@ -63,8 +63,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public DepartmentItem updateDepartment(Long id, UpdateDepartmentRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public DepartmentItem updateDepartment(Long id, UpdateDepartmentRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         Department existing = requireDepartment(id);
 
         String name = normalizeName(request.getName());
@@ -79,8 +79,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public DepartmentItem updateDepartmentStatus(Long id, UpdateDepartmentStatusRequest request, String operatorName) {
-        requireAdmin(operatorName);
+    public DepartmentItem updateDepartmentStatus(Long id, UpdateDepartmentStatusRequest request, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         requireDepartment(id);
 
         if (!Boolean.TRUE.equals(request.getIsActive())) {
@@ -96,8 +96,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    public void deleteDepartment(Long id, String operatorName) {
-        requireAdmin(operatorName);
+    public void deleteDepartment(Long id, Long operatorUserId) {
+        requireAdmin(operatorUserId);
         requireDepartment(id);
 
         if (departmentMapper.countChildrenByParentId(id) > 0) {
@@ -144,8 +144,11 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
     }
 
-    private User requireAdmin(String operatorName) {
-        User operator = userMapper.findByName(operatorName);
+    private User requireAdmin(Long operatorUserId) {
+        if (operatorUserId == null) {
+            throw new AuthException(401, "Unauthenticated");
+        }
+        User operator = userMapper.findById(operatorUserId);
         if (operator == null || !ADMIN_ROLE.equals(operator.getRole())) {
             throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
         }

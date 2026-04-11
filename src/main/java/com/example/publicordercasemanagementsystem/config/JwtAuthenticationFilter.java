@@ -37,9 +37,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtService.parseClaims(token);
                 String role = claims.get("role", String.class);
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
-                // Use name as the principal to match the unified login identity.
+                // Use userId as the principal so the security context can identify accounts consistently.
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        claims.get("name", String.class), null, Collections.singletonList(authority));
+                        claims.getSubject(), null, Collections.singletonList(authority));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

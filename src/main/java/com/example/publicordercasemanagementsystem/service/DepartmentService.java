@@ -13,12 +13,12 @@ public interface DepartmentService {
 
     DepartmentItem getDepartmentById(Long id);
 
-    DepartmentItem createDepartment(CreateDepartmentRequest request, String operatorName);
+    DepartmentItem createDepartment(CreateDepartmentRequest request, Long operatorUserId);
 
-    DepartmentItem updateDepartment(Long id, UpdateDepartmentRequest request, String operatorName);
+    DepartmentItem updateDepartment(Long id, UpdateDepartmentRequest request, Long operatorUserId);
 
-    DepartmentItem updateDepartmentStatus(Long id, UpdateDepartmentStatusRequest request, String operatorName);
+    DepartmentItem updateDepartmentStatus(Long id, UpdateDepartmentStatusRequest request, Long operatorUserId);
 
-    void deleteDepartment(Long id, String operatorName);
+    void deleteDepartment(Long id, Long operatorUserId);
 }
 

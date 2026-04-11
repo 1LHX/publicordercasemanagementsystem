@@ -86,7 +86,7 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public CaseDetailResponse createCase(CreateCaseRequest request, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse createCase(CreateCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest) {
         if (caseMapper.findByCaseNumber(request.getCaseNumber()) != null) {
             throw new AuthException(400, "Case number already exists");
         }
@@ -108,7 +108,7 @@ public class CaseServiceImpl implements CaseService {
         record.setUpdatedAt(LocalDateTime.now());
         caseMapper.insertCase(record);
 
-        addProcess(record.getId(), null, STATUS_REGISTERED, operatorName, "Case created", httpRequest);
+        addProcess(record.getId(), null, STATUS_REGISTERED, operatorUserId, "Case created", httpRequest);
         return toDetail(requireCase(record.getId()));
     }
 
@@ -225,16 +225,16 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public void deleteCase(Long id, String operatorName) {
-        requireOperator(operatorName);
+    public void deleteCase(Long id, Long operatorUserId) {
+        requireOperator(operatorUserId);
         requireCase(id);
         caseMapper.deleteCase(id);
     }
 
     @Override
-    public CaseDetailResponse acceptCase(Long id, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse acceptCase(Long id, Long operatorUserId, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         if (!ROLE_SUPERVISOR.equals(operator.getRole()) && !ROLE_ADMIN.equals(operator.getRole())) {
             throw new AuthException(403, "Current role cannot accept case");
         }
@@ -252,7 +252,7 @@ public class CaseServiceImpl implements CaseService {
         caseWorkflowService.startCaseWorkflow(id,
                 "ACCEPTANCE_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 idempotencyKey,
                 httpRequest);
 
@@ -261,28 +261,28 @@ public class CaseServiceImpl implements CaseService {
         caseWorkflowService.approveCaseWorkflow(id,
                 "ACCEPTANCE_REVIEW",
                 actionRequest,
-                operatorName,
+                operatorUserId,
                 idempotencyKey == null ? null : idempotencyKey + "-approve",
                 httpRequest);
 
-        addProcess(id, record.getStatus(), STATUS_ACCEPTED, operatorName, "Case accepted", httpRequest);
+        addProcess(id, record.getStatus(), STATUS_ACCEPTED, operatorUserId, "Case accepted", httpRequest);
         return toDetail(requireCase(id));
     }
 
     @Override
-    public CaseDetailResponse assignCase(Long id, AssignCaseRequest request, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse assignCase(Long id, AssignCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         User officer = userMapper.findById(request.getHandlingOfficerId());
         if (officer == null || !Boolean.TRUE.equals(officer.getIsActive())) {
             throw new AuthException(400, "Handling officer not found or inactive");
         }
         caseMapper.assignOfficer(id, request.getHandlingOfficerId(), officer.getDepartmentId());
-        addProcess(id, record.getStatus(), record.getStatus(), operatorName, "Assigned handling officer", httpRequest);
+        addProcess(id, record.getStatus(), record.getStatus(), operatorUserId, "Assigned handling officer", httpRequest);
         return toDetail(requireCase(id));
     }
 
     @Override
-    public CaseDetailResponse transitionStatus(Long id, StatusTransitionRequest request, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse transitionStatus(Long id, StatusTransitionRequest request, Long operatorUserId, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         String fromStatus = record.getStatus();
         String toStatus = request.getToStatus() == null ? null : request.getToStatus().trim().toUpperCase();
@@ -298,7 +298,7 @@ public class CaseServiceImpl implements CaseService {
             acceptanceTime = LocalDateTime.now();
         }
         caseMapper.updateCaseStatus(id, toStatus, acceptanceTime);
-        addProcess(id, fromStatus, toStatus, operatorName, request.getComment(), httpRequest);
+        addProcess(id, fromStatus, toStatus, operatorUserId, request.getComment(), httpRequest);
         return toDetail(requireCase(id));
     }
 
@@ -314,9 +314,9 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public CaseEvidenceItem addEvidence(Long id, CreateEvidenceRequest request, String operatorName) {
+    public CaseEvidenceItem addEvidence(Long id, CreateEvidenceRequest request, Long operatorUserId) {
         requireCase(id);
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
 
         CaseEvidence evidence = new CaseEvidence();
         evidence.setCaseId(id);
@@ -350,8 +350,8 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, String operatorName) {
-        requireOperator(operatorName);
+    public CaseEvidenceItem updateEvidence(Long caseId, Long evidenceId, UpdateEvidenceRequest request, Long operatorUserId) {
+        requireOperator(operatorUserId);
         requireCase(caseId);
         CaseEvidence evidence = requireEvidence(caseId, evidenceId);
         evidence.setFileName(request.getFileName());
@@ -364,8 +364,8 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public void deleteEvidence(Long caseId, Long evidenceId, String operatorName) {
-        requireOperator(operatorName);
+    public void deleteEvidence(Long caseId, Long evidenceId, Long operatorUserId) {
+        requireOperator(operatorUserId);
         requireCase(caseId);
         requireEvidence(caseId, evidenceId);
         caseMapper.deleteEvidence(evidenceId);
@@ -374,14 +374,14 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse submitLegalReview(Long id,
                                                 LegalReviewSubmitRequest request,
-                                                String operatorName,
+                                                Long operatorUserId,
                                                 HttpServletRequest httpRequest) {
         StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
         workflowRequest.setComment(request.getComment());
         caseWorkflowService.startCaseWorkflow(id,
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
@@ -390,14 +390,14 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse approveLegalReview(Long id,
                                                  LegalReviewApproveRequest request,
-                                                 String operatorName,
+                                                  Long operatorUserId,
                                                  HttpServletRequest httpRequest) {
         WorkflowActionRequest workflowRequest = new WorkflowActionRequest();
         workflowRequest.setComment(request.getComment());
         caseWorkflowService.approveCaseWorkflow(id,
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
@@ -406,14 +406,14 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse rejectLegalReview(Long id,
                                                 LegalReviewRejectRequest request,
-                                                String operatorName,
+                                                Long operatorUserId,
                                                 HttpServletRequest httpRequest) {
         WorkflowActionRequest workflowRequest = new WorkflowActionRequest();
         workflowRequest.setComment(request.getReason());
         caseWorkflowService.rejectCaseWorkflow(id,
                 "LEGAL_AUDIT_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
@@ -422,9 +422,9 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse saveDecision(Long id,
                                            SaveDecisionRequest request,
-                                           String operatorName,
+                                           Long operatorUserId,
                                            HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         LocalDateTime now = LocalDateTime.now();
 
         CaseDecision decision = new CaseDecision();
@@ -443,7 +443,7 @@ public class CaseServiceImpl implements CaseService {
         caseWorkflowService.startCaseWorkflow(id,
                 "DECISION_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
@@ -452,9 +452,9 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse recordExecution(Long id,
                                               RecordExecutionRequest request,
-                                              String operatorName,
+                                              Long operatorUserId,
                                               HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         LocalDateTime now = LocalDateTime.now();
 
         CaseExecution execution = new CaseExecution();
@@ -472,27 +472,27 @@ public class CaseServiceImpl implements CaseService {
         caseWorkflowService.startCaseWorkflow(id,
                 "EXECUTION_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
 
     @Override
-    public CaseDetailResponse archiveCase(Long id, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse archiveCase(Long id, Long operatorUserId, HttpServletRequest httpRequest) {
         StartCaseWorkflowRequest workflowRequest = new StartCaseWorkflowRequest();
         workflowRequest.setComment("Archive submitted for approval");
         caseWorkflowService.startCaseWorkflow(id,
                 "ARCHIVE_REVIEW",
                 workflowRequest,
-                operatorName,
+                operatorUserId,
                 extractIdempotencyKey(httpRequest),
                 httpRequest);
         return toDetail(requireCase(id));
     }
 
     @Override
-    public CaseDetailResponse unarchiveCase(Long id, String operatorName, HttpServletRequest httpRequest) {
+    public CaseDetailResponse unarchiveCase(Long id, Long operatorUserId, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
         requireStatus(record, STATUS_ARCHIVED, "Only ARCHIVED case can be unarchived");
 
@@ -502,17 +502,17 @@ public class CaseServiceImpl implements CaseService {
                 : archiveProcess.getFromStatus();
 
         caseMapper.updateCaseStatus(id, restoreStatus, record.getAcceptanceTime());
-        addProcess(id, STATUS_ARCHIVED, restoreStatus, operatorName, "Case unarchived", httpRequest);
+        addProcess(id, STATUS_ARCHIVED, restoreStatus, operatorUserId, "Case unarchived", httpRequest);
         return toDetail(requireCase(id));
     }
 
     private void addProcess(Long caseId,
                             String fromStatus,
                             String toStatus,
-                            String operatorName,
+                            Long operatorUserId,
                             String comment,
                             HttpServletRequest httpRequest) {
-        User operator = requireOperator(operatorName);
+        User operator = requireOperator(operatorUserId);
         CaseProcess process = new CaseProcess();
         process.setCaseId(caseId);
         process.setFromStatus(fromStatus);
@@ -524,11 +524,11 @@ public class CaseServiceImpl implements CaseService {
         caseMapper.insertProcess(process);
     }
 
-    private User requireOperator(String operatorName) {
-        if (operatorName == null || operatorName.isBlank()) {
+    private User requireOperator(Long operatorUserId) {
+        if (operatorUserId == null) {
             throw new AuthException(401, "Unauthenticated");
         }
-        User user = userMapper.findByName(operatorName);
+        User user = userMapper.findById(operatorUserId);
         if (user == null) {
             throw new AuthException(401, "Operator not found");
         }

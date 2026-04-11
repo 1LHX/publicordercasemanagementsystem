@@ -51,7 +51,7 @@ public class CaseController {
     @PostMapping
     public ResponseEntity<ApiResponse<CaseDetailResponse>> createCase(@Valid @RequestBody CreateCaseRequest request,
                                                                       HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.createCase(request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.createCase(request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case created successfully"));
     }
 
@@ -112,14 +112,14 @@ public class CaseController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCase(@PathVariable Long id) {
-        caseService.deleteCase(id, getCurrentUserName());
+        caseService.deleteCase(id, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "Case deleted successfully"));
     }
 
     @PostMapping("/{id}/accept")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> acceptCase(@PathVariable Long id,
                                                                       HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.acceptCase(id, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.acceptCase(id, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case accepted successfully"));
     }
 
@@ -127,7 +127,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> assignCase(@PathVariable Long id,
                                                                       @Valid @RequestBody AssignCaseRequest request,
                                                                       HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.assignCase(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.assignCase(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case assigned successfully"));
     }
 
@@ -135,7 +135,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> transitionCaseStatus(@PathVariable Long id,
                                                                                  @Valid @RequestBody StatusTransitionRequest request,
                                                                                  HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.transitionStatus(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.transitionStatus(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case status updated successfully"));
     }
 
@@ -147,7 +147,7 @@ public class CaseController {
     @PostMapping("/{id}/evidences")
     public ResponseEntity<ApiResponse<CaseEvidenceItem>> addEvidence(@PathVariable Long id,
                                                                      @Valid @RequestBody CreateEvidenceRequest request) {
-        CaseEvidenceItem response = caseService.addEvidence(id, request, getCurrentUserName());
+        CaseEvidenceItem response = caseService.addEvidence(id, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(response, "Evidence added successfully"));
     }
 
@@ -155,14 +155,14 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseEvidenceItem>> updateEvidence(@PathVariable Long caseId,
                                                                         @PathVariable Long evidenceId,
                                                                         @Valid @RequestBody UpdateEvidenceRequest request) {
-        CaseEvidenceItem response = caseService.updateEvidence(caseId, evidenceId, request, getCurrentUserName());
+        CaseEvidenceItem response = caseService.updateEvidence(caseId, evidenceId, request, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(response, "Evidence updated successfully"));
     }
 
     @DeleteMapping("/{caseId}/evidences/{evidenceId}")
     public ResponseEntity<ApiResponse<Void>> deleteEvidence(@PathVariable Long caseId,
                                                             @PathVariable Long evidenceId) {
-        caseService.deleteEvidence(caseId, evidenceId, getCurrentUserName());
+        caseService.deleteEvidence(caseId, evidenceId, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "Evidence deleted successfully"));
     }
 
@@ -175,7 +175,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> submitLegalReview(@PathVariable Long id,
                                                                              @Valid @RequestBody LegalReviewSubmitRequest request,
                                                                              HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.submitLegalReview(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.submitLegalReview(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Legal review submitted successfully"));
     }
 
@@ -183,7 +183,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> approveLegalReview(@PathVariable Long id,
                                                                               @Valid @RequestBody LegalReviewApproveRequest request,
                                                                               HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.approveLegalReview(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.approveLegalReview(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Legal review approved successfully"));
     }
 
@@ -191,7 +191,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> rejectLegalReview(@PathVariable Long id,
                                                                              @Valid @RequestBody LegalReviewRejectRequest request,
                                                                              HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.rejectLegalReview(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.rejectLegalReview(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Legal review rejected successfully"));
     }
 
@@ -199,7 +199,7 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> saveDecision(@PathVariable Long id,
                                                                         @Valid @RequestBody SaveDecisionRequest request,
                                                                         HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.saveDecision(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.saveDecision(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Decision saved successfully"));
     }
 
@@ -207,31 +207,35 @@ public class CaseController {
     public ResponseEntity<ApiResponse<CaseDetailResponse>> recordExecution(@PathVariable Long id,
                                                                            @Valid @RequestBody RecordExecutionRequest request,
                                                                            HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.recordExecution(id, request, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.recordExecution(id, request, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Execution recorded successfully"));
     }
 
     @PostMapping("/{id}/archive")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> archiveCase(@PathVariable Long id,
                                                                        HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.archiveCase(id, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.archiveCase(id, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case archived successfully"));
     }
 
     @PostMapping("/{id}/unarchive")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> unarchiveCase(@PathVariable Long id,
                                                                          HttpServletRequest httpRequest) {
-        CaseDetailResponse response = caseService.unarchiveCase(id, getCurrentUserName(), httpRequest);
+        CaseDetailResponse response = caseService.unarchiveCase(id, getCurrentUserId(), httpRequest);
         return ResponseEntity.ok(ApiResponse.ok(response, "Case unarchived successfully"));
     }
 
-    private String getCurrentUserName() {
+    private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AuthException(401, "Unauthenticated");
         }
-        return authentication.getName();
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException ex) {
+            throw new AuthException(401, "Invalid authentication principal");
+        }
     }
 }
 
