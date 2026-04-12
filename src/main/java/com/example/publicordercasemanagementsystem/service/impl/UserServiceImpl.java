@@ -77,12 +77,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfo updateUserName(Long id, UpdateUserNameRequest request, Long operatorUserId) {
-        User operator = requireAdmin(operatorUserId);
+        allowSelfOrAdmin(operatorUserId, id);
         User target = requireUserById(id);
-
-        if (operator.getId().equals(id)) {
-            throw new AuthException(400, "Current operator cannot rename itself");
-        }
 
         String newName = request.getName().trim();
         if (userMapper.countByNameExcludeId(newName, id) > 0) {
@@ -99,7 +95,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changeUserPassword(Long id, ChangePasswordRequest request, Long operatorUserId) {
-        requireAdmin(operatorUserId);
+        allowSelfOrAdmin(operatorUserId, id);
         requireUserById(id);
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new AuthException(400, "Passwords do not match");
@@ -191,5 +187,21 @@ public class UserServiceImpl implements UserService {
         info.setDepartment(user.getDepartment());
         info.setDepartmentId(user.getDepartmentId());
         return info;
+    }
+
+    private void allowSelfOrAdmin(Long operatorUserId, Long targetUserId) {
+        if (operatorUserId == null) {
+            throw new AuthException(401, "Unauthenticated");
+        }
+        if (operatorUserId.equals(targetUserId)) {
+            return;
+        }
+        User operator = userMapper.findById(operatorUserId);
+        if (operator == null) {
+            throw new AuthException(401, "Unauthenticated");
+        }
+        if (!ADMIN_ROLE.equals(operator.getRole())) {
+            throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
+        }
     }
 }

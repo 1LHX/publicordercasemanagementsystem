@@ -119,7 +119,7 @@ Authorization: Bearer <access_token>
 - 说明：当前用户身份来自 JWT 主体（`authentication.getName()` -> `userId` 字符串）。
 
 ### PUT `/api/users/{id}/name`
-- 鉴权：需要登录（仅 `admin`）
+- 鉴权：需要登录（所有角色可修改本人，`admin` 可修改任意用户）
 - 路径参数：`id`（数字）
 - 请求体（`UpdateUserNameRequest`）：
   - `name`（字符串，必填）
@@ -127,7 +127,7 @@ Authorization: Bearer <access_token>
 - 成功提示：`User name updated successfully`
 
 ### PUT `/api/users/{id}/password`
-- 鉴权：需要登录（仅 `admin`）
+- 鉴权：需要登录（所有角色可修改本人，`admin` 可修改任意用户）
 - 路径参数：`id`（数字）
 - 请求体（`ChangePasswordRequest`）：
   - `password`（字符串，必填）
