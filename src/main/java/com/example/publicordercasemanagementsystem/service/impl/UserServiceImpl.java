@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
         }
         userMapper.updateNameById(id, newName);
 
-        // Refresh tokens should be revoked when the identity claim(name) changes.
+        // Active access tokens may still carry old display info; revoke refresh tokens to force re-login.
         if (!newName.equals(target.getName())) {
             refreshTokenMapper.revokeByUserId(id);
         }

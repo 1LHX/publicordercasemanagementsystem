@@ -45,7 +45,7 @@ Authorization: Bearer <access_token>
   - `/api/auth/**`
   - `/api/dashscope/**`
 - 其余接口都需要 JWT（见 `SecurityConfig`）。
-- JWT 主体使用 `name` claim（不是 user id）。`/api/users/me` 与案件操作审计都依赖该值。
+- JWT 主体（`sub`）为 `userId`；`name` 是展示字段，不用于身份判定。
 
 ## 3. 常见错误码
 
@@ -73,6 +73,7 @@ Authorization: Bearer <access_token>
   - `refreshToken`（字符串，必填）
 - 响应：`ApiResponse<AuthResponse>`
 - 成功提示：`Token refreshed successfully`
+- 约束：`Authorization` 中 access token 与 `refreshToken` 必须属于同一 `userId`，否则返回 `401`。
 
 ### POST `/api/auth/logout`
 - 鉴权：需要 `Authorization` 请求头
@@ -80,6 +81,7 @@ Authorization: Bearer <access_token>
   - `refreshToken`（字符串，必填）
 - 响应：`ApiResponse<Void>`
 - 成功提示：`Logout successful`
+- 行为：仅撤销当前 `refreshToken`（会话级退出），不会自动撤销该用户其他会话。
 
 ### POST `/api/auth/register`
 - 鉴权：无需登录
@@ -114,7 +116,7 @@ Authorization: Bearer <access_token>
 - 鉴权：需要登录
 - 查询参数：无
 - 响应：`ApiResponse<UserInfo>`
-- 说明：当前用户身份来自 JWT 主体（`authentication.getName()`）。
+- 说明：当前用户身份来自 JWT 主体（`authentication.getName()` -> `userId` 字符串）。
 
 ### PUT `/api/users/{id}/name`
 - 鉴权：需要登录（仅 `admin`）
@@ -423,6 +425,4 @@ Authorization: Bearer <token>
 - 受保护接口必须带 `Authorization: Bearer <token>`。
 - 即使 HTTP 200，只要 `code != 200` 也视为业务失败。
 - 日期时间字段使用 ISO-8601 字符串。
-- JWT 主体身份以 `name` 为准，不要改成 user id。
-
-
+- JWT 主体身份以 `userId`（`sub`）为准。

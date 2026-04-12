@@ -26,8 +26,17 @@
         where token_hash = #{tokenHash} and revoked = 0
     </select>
 
+    <select id="findValidByHashAndUserId" resultMap="RefreshTokenResult">
+        select * from refresh_tokens
+        where token_hash = #{tokenHash} and user_id = #{userId} and revoked = 0
+    </select>
+
     <update id="revokeByHash">
         update refresh_tokens set revoked = 1 where token_hash = #{tokenHash}
+    </update>
+
+    <update id="revokeByHashAndUserId">
+        update refresh_tokens set revoked = 1 where token_hash = #{tokenHash} and user_id = #{userId}
     </update>
 
     <update id="revokeByUserId">

@@ -8,7 +8,11 @@ public interface RefreshTokenMapper {
 
     RefreshToken findValidByHash(String tokenHash);
 
+    RefreshToken findValidByHashAndUserId(String tokenHash, Long userId);
+
     int revokeByHash(String tokenHash);
+
+    int revokeByHashAndUserId(String tokenHash, Long userId);
 
     int revokeByUserId(Long userId);
 

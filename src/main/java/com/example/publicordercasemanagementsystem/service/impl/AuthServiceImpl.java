@@ -94,12 +94,13 @@ public class AuthServiceImpl implements AuthService {
         if (accessToken == null || !jwtService.isTokenValid(accessToken)) {
             throw new AuthException(401, "Invalid or expired token");
         }
+        Long accessUserId = jwtService.getUserId(accessToken);
         String tokenHash = CryptoUtil.sha256Hex(request.getRefreshToken());
-        RefreshToken stored = refreshTokenMapper.findValidByHash(tokenHash);
+        RefreshToken stored = refreshTokenMapper.findValidByHashAndUserId(tokenHash, accessUserId);
         if (stored == null || stored.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new AuthException(401, "Invalid or expired token");
         }
-        refreshTokenMapper.revokeByHash(tokenHash);
+        refreshTokenMapper.revokeByHashAndUserId(tokenHash, accessUserId);
         refreshTokenMapper.updateLastUsed(stored.getId());
 
         User user = userMapper.findById(stored.getUserId());
@@ -125,12 +126,16 @@ public class AuthServiceImpl implements AuthService {
         if (accessToken == null || !jwtService.isTokenValid(accessToken)) {
             throw new AuthException(401, "Invalid token");
         }
-        if (request != null && request.getRefreshToken() != null) {
-            String tokenHash = CryptoUtil.sha256Hex(request.getRefreshToken());
-            refreshTokenMapper.revokeByHash(tokenHash);
+        if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
+            throw new AuthException(400, "refreshToken is required");
         }
+
         Long userId = jwtService.getUserId(accessToken);
-        refreshTokenMapper.revokeByUserId(userId);
+        String tokenHash = CryptoUtil.sha256Hex(request.getRefreshToken());
+        int affected = refreshTokenMapper.revokeByHashAndUserId(tokenHash, userId);
+        if (affected <= 0) {
+            throw new AuthException(401, "Invalid token");
+        }
     }
 
     @Override
