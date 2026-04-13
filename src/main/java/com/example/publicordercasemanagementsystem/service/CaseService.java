@@ -49,6 +49,8 @@ public interface CaseService {
 
     void deleteCase(Long id, Long operatorUserId);
 
+    void deleteCases(List<Long> ids, Long operatorUserId);
+
     CaseDetailResponse acceptCase(Long id, Long operatorUserId, HttpServletRequest httpRequest);
 
     CaseDetailResponse assignCase(Long id, AssignCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest);

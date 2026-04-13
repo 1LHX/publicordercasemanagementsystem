@@ -14,10 +14,12 @@ import com.example.publicordercasemanagementsystem.pojo.User;
 import com.example.publicordercasemanagementsystem.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -145,6 +147,22 @@ public class UserServiceImpl implements UserService {
         userMapper.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public void deleteUsers(List<Long> ids, Long operatorUserId) {
+        User operator = requireAdmin(operatorUserId);
+        List<Long> targetIds = normalizeIds(ids);
+
+        for (Long id : targetIds) {
+            if (operator.getId().equals(id)) {
+                throw new AuthException(400, "Current operator cannot delete itself");
+            }
+            requireUserById(id);
+        }
+
+        userMapper.deleteByIds(targetIds);
+    }
+
     private User requireAdmin(Long operatorUserId) {
         if (operatorUserId == null) {
             throw new AuthException(401, "Unauthenticated");
@@ -203,5 +221,19 @@ public class UserServiceImpl implements UserService {
         if (!ADMIN_ROLE.equals(operator.getRole())) {
             throw new AuthException(403, PERMISSION_DENIED_MESSAGE);
         }
+    }
+
+    private List<Long> normalizeIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new AuthException(400, "ids is required");
+        }
+        List<Long> uniqueIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (uniqueIds.isEmpty()) {
+            throw new AuthException(400, "ids is required");
+        }
+        return uniqueIds;
     }
 }

@@ -103,5 +103,40 @@ class UserServiceImplSelfPermissionTest {
         verify(userMapper).updatePasswordById(3L, "encoded-pass");
         verify(refreshTokenMapper).revokeByUserId(3L);
     }
+
+    @Test
+    void deleteUsersShouldAllowAdminToDeleteMultipleUsers() {
+        User admin = new User();
+        admin.setId(1L);
+        admin.setRole("admin");
+
+        User target1 = new User();
+        target1.setId(2L);
+        User target2 = new User();
+        target2.setId(3L);
+
+        when(userMapper.findById(1L)).thenReturn(admin);
+        when(userMapper.findById(2L)).thenReturn(target1);
+        when(userMapper.findById(3L)).thenReturn(target2);
+
+        userService.deleteUsers(java.util.List.of(2L, 3L, 3L), 1L);
+
+        verify(userMapper).deleteByIds(java.util.List.of(2L, 3L));
+    }
+
+    @Test
+    void deleteUsersShouldRejectDeletingSelf() {
+        User admin = new User();
+        admin.setId(1L);
+        admin.setRole("admin");
+
+        when(userMapper.findById(1L)).thenReturn(admin);
+
+        AuthException ex = assertThrows(AuthException.class,
+                () -> userService.deleteUsers(java.util.List.of(1L, 2L), 1L));
+
+        assertEquals(400, ex.getStatus());
+        verify(userMapper, never()).deleteByIds(any());
+    }
 }
 

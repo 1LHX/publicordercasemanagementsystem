@@ -17,6 +17,8 @@ public interface CaseMapper {
 
     int deleteCase(Long id);
 
+    int deleteByIds(@Param("ids") List<Long> ids);
+
     CaseRecord findById(Long id);
 
     CaseRecord findByCaseNumber(String caseNumber);

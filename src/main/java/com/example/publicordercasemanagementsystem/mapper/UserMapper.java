@@ -35,6 +35,8 @@ public interface UserMapper {
 
     int deleteById(@Param("id") Long id);
 
+    int deleteByIds(@Param("ids") List<Long> ids);
+
     long countByFilters(@Param("name") String name,
                         @Param("role") String role,
                         @Param("department") String department,

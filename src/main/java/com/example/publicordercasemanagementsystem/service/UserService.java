@@ -29,4 +29,6 @@ public interface UserService {
     UserInfo updateUserStatus(Long id, UpdateUserStatusRequest request, Long operatorUserId);
 
     void deleteUser(Long id, Long operatorUserId);
+
+    void deleteUsers(List<Long> ids, Long operatorUserId);
 }

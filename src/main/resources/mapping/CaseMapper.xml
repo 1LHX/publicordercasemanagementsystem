@@ -89,6 +89,14 @@
         where id = #{id}
     </delete>
 
+    <delete id="deleteByIds">
+        delete from cases
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
     <select id="findById" resultMap="CaseRecordResult">
         select <include refid="CaseSelectColumns" />
         from cases c

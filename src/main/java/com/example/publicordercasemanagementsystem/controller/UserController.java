@@ -1,6 +1,7 @@
 package com.example.publicordercasemanagementsystem.controller;
 
 import com.example.publicordercasemanagementsystem.dto.ApiResponse;
+import com.example.publicordercasemanagementsystem.dto.BatchDeleteRequest;
 import com.example.publicordercasemanagementsystem.dto.ChangePasswordRequest;
 import com.example.publicordercasemanagementsystem.dto.PageResult;
 import com.example.publicordercasemanagementsystem.dto.UpdateUserNameRequest;
@@ -88,6 +89,12 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "User deleted successfully"));
+    }
+
+    @DeleteMapping("/batch")
+    public ResponseEntity<ApiResponse<Void>> deleteUsers(@Valid @RequestBody BatchDeleteRequest request) {
+        userService.deleteUsers(request.getIds(), getCurrentUserId());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Users deleted successfully"));
     }
 
     private Long getCurrentUserId() {

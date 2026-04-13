@@ -33,6 +33,7 @@ import com.example.publicordercasemanagementsystem.service.CaseWorkflowService;
 import com.example.publicordercasemanagementsystem.util.RequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import java.util.Base64;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -229,6 +231,19 @@ public class CaseServiceImpl implements CaseService {
         requireOperator(operatorUserId);
         requireCase(id);
         caseMapper.deleteCase(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCases(List<Long> ids, Long operatorUserId) {
+        requireOperator(operatorUserId);
+        List<Long> targetIds = normalizeIds(ids);
+
+        for (Long id : targetIds) {
+            requireCase(id);
+        }
+
+        caseMapper.deleteByIds(targetIds);
     }
 
     @Override
@@ -549,6 +564,20 @@ public class CaseServiceImpl implements CaseService {
             throw new AuthException(404, "Evidence not found");
         }
         return evidence;
+    }
+
+    private List<Long> normalizeIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new AuthException(400, "ids is required");
+        }
+        List<Long> uniqueIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (uniqueIds.isEmpty()) {
+            throw new AuthException(400, "ids is required");
+        }
+        return uniqueIds;
     }
 
     private void requireStatus(CaseRecord record, String expectedStatus, String message) {

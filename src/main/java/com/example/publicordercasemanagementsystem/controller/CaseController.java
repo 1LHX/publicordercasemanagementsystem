@@ -2,6 +2,7 @@ package com.example.publicordercasemanagementsystem.controller;
 
 import com.example.publicordercasemanagementsystem.dto.ApiResponse;
 import com.example.publicordercasemanagementsystem.dto.AssignCaseRequest;
+import com.example.publicordercasemanagementsystem.dto.BatchDeleteRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDetailResponse;
 import com.example.publicordercasemanagementsystem.dto.CaseEvidenceItem;
 import com.example.publicordercasemanagementsystem.dto.CaseExportResponse;
@@ -114,6 +115,12 @@ public class CaseController {
     public ResponseEntity<ApiResponse<Void>> deleteCase(@PathVariable Long id) {
         caseService.deleteCase(id, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.ok(null, "Case deleted successfully"));
+    }
+
+    @DeleteMapping("/batch")
+    public ResponseEntity<ApiResponse<Void>> deleteCases(@Valid @RequestBody BatchDeleteRequest request) {
+        caseService.deleteCases(request.getIds(), getCurrentUserId());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Cases deleted successfully"));
     }
 
     @PostMapping("/{id}/accept")

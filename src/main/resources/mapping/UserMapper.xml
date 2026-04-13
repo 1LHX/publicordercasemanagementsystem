@@ -115,6 +115,14 @@
         where id = #{id}
     </delete>
 
+    <delete id="deleteByIds">
+        delete from users
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
     <select id="countByFilters" resultType="long">
         select count(1)
         from users u

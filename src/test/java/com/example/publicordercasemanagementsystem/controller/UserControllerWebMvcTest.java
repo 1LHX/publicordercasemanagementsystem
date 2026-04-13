@@ -137,6 +137,18 @@ class UserControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("User deleted successfully"));
     }
 
+    @Test
+    void deleteUsersShouldReturnSuccessMessage() throws Exception {
+        doNothing().when(userService).deleteUsers(any(), eq(1L));
+
+        mockMvc.perform(delete("/api/users/batch")
+                        .with(authenticatedUser(1L))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"ids\":[9,10]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Users deleted successfully"));
+    }
+
     private RequestPostProcessor authenticatedUser(Long userId) {
         return request -> {
             SecurityContextHolder.getContext().setAuthentication(

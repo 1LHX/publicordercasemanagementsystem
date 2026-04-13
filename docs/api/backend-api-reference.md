@@ -158,6 +158,13 @@ Authorization: Bearer <access_token>
 - 响应：`ApiResponse<Void>`
 - 成功提示：`User deleted successfully`
 
+### DELETE `/api/users/batch`
+- 鉴权：需要登录（仅 `admin`）
+- 请求体（`BatchDeleteRequest`）：
+  - `ids`（数组，必填）
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Users deleted successfully`
+
 ---
 
 ## 5.1 部门接口（`/api/departments`）
@@ -286,6 +293,13 @@ Authorization: Bearer <access_token>
 - 路径参数：`id`
 - 响应：`ApiResponse<Void>`
 - 成功提示：`Case deleted successfully`
+
+### DELETE `/api/cases/batch`
+- 鉴权：需要登录
+- 请求体（`BatchDeleteRequest`）：
+  - `ids`（数组，必填）
+- 响应：`ApiResponse<Void>`
+- 成功提示：`Cases deleted successfully`
 
 ### POST `/api/cases/{id}/accept`
 - 鉴权：需要登录
