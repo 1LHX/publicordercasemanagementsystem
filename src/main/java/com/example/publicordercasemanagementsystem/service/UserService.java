@@ -8,6 +8,8 @@ import com.example.publicordercasemanagementsystem.dto.UpdateUserStatusRequest;
 import com.example.publicordercasemanagementsystem.dto.UserInfo;
 import com.example.publicordercasemanagementsystem.dto.UserListItem;
 
+import java.util.List;
+
 public interface UserService {
 
     PageResult<UserListItem> listUsers(String name,
