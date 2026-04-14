@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -67,6 +68,60 @@ class RoleControllerWebMvcTest {
     }
 
     @Test
+    void getRoleCodeShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/code"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("admin"));
+    }
+
+    @Test
+    void getRoleNameShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/name"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("Administrator"));
+    }
+
+    @Test
+    void getRoleSortOrderShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/sort-order"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(1));
+    }
+
+    @Test
+    void getRoleIsActiveShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/is-active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    void getRoleCreatedAtShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/created-at"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("2026-04-14T10:15:30"));
+    }
+
+    @Test
+    void getRoleUpdatedAtShouldReturnSingleField() throws Exception {
+        when(roleService.getRoleByCode("admin")).thenReturn(roleItem());
+
+        mockMvc.perform(get("/api/roles/admin/updated-at"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("2026-04-14T11:22:33"));
+    }
+
+    @Test
     void createRoleShouldReturnCreatedMessage() throws Exception {
         RoleItem item = new RoleItem();
         item.setCode("auditor");
@@ -112,6 +167,17 @@ class RoleControllerWebMvcTest {
             );
             return request;
         };
+    }
+
+    private RoleItem roleItem() {
+        RoleItem item = new RoleItem();
+        item.setCode("admin");
+        item.setName("Administrator");
+        item.setSortOrder(1);
+        item.setIsActive(true);
+        item.setCreatedAt(LocalDateTime.parse("2026-04-14T10:15:30"));
+        item.setUpdatedAt(LocalDateTime.parse("2026-04-14T11:22:33"));
+        return item;
     }
 }
 

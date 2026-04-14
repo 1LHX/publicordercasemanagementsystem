@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -42,6 +43,36 @@ public class RoleController {
     @GetMapping("/{code}")
     public ResponseEntity<ApiResponse<RoleItem>> getRoleByCode(@PathVariable String code) {
         return ResponseEntity.ok(ApiResponse.ok(roleService.getRoleByCode(code)));
+    }
+
+    @GetMapping("/{code}/code")
+    public ResponseEntity<ApiResponse<String>> getRoleCode(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getCode()));
+    }
+
+    @GetMapping("/{code}/name")
+    public ResponseEntity<ApiResponse<String>> getRoleName(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getName()));
+    }
+
+    @GetMapping("/{code}/sort-order")
+    public ResponseEntity<ApiResponse<Integer>> getRoleSortOrder(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getSortOrder()));
+    }
+
+    @GetMapping("/{code}/is-active")
+    public ResponseEntity<ApiResponse<Boolean>> getRoleIsActive(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getIsActive()));
+    }
+
+    @GetMapping("/{code}/created-at")
+    public ResponseEntity<ApiResponse<LocalDateTime>> getRoleCreatedAt(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getCreatedAt()));
+    }
+
+    @GetMapping("/{code}/updated-at")
+    public ResponseEntity<ApiResponse<LocalDateTime>> getRoleUpdatedAt(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getUpdatedAt()));
     }
 
     @PostMapping
@@ -81,6 +112,10 @@ public class RoleController {
         } catch (NumberFormatException ex) {
             throw new AuthException(401, "Invalid authentication principal");
         }
+    }
+
+    private RoleItem getRole(String code) {
+        return roleService.getRoleByCode(code);
     }
 }
 
