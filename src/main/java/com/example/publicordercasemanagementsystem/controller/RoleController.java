@@ -66,13 +66,13 @@ public class RoleController {
     }
 
     @GetMapping("/{code}/created-at")
-    public ResponseEntity<ApiResponse<LocalDateTime>> getRoleCreatedAt(@PathVariable String code) {
-        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getCreatedAt()));
+    public ResponseEntity<ApiResponse<String>> getRoleCreatedAt(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(formatDateTime(getRole(code).getCreatedAt())));
     }
 
     @GetMapping("/{code}/updated-at")
-    public ResponseEntity<ApiResponse<LocalDateTime>> getRoleUpdatedAt(@PathVariable String code) {
-        return ResponseEntity.ok(ApiResponse.ok(getRole(code).getUpdatedAt()));
+    public ResponseEntity<ApiResponse<String>> getRoleUpdatedAt(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok(formatDateTime(getRole(code).getUpdatedAt())));
     }
 
     @PostMapping
@@ -116,6 +116,10 @@ public class RoleController {
 
     private RoleItem getRole(String code) {
         return roleService.getRoleByCode(code);
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        return dateTime == null ? null : dateTime.toString();
     }
 }
 

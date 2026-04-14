@@ -225,8 +225,8 @@ Authorization: Bearer <access_token>
 - `GET /api/roles/{code}/name` -> `ApiResponse<String>`
 - `GET /api/roles/{code}/sort-order` -> `ApiResponse<Integer>`
 - `GET /api/roles/{code}/is-active` -> `ApiResponse<Boolean>`
-- `GET /api/roles/{code}/created-at` -> `ApiResponse<LocalDateTime>`
-- `GET /api/roles/{code}/updated-at` -> `ApiResponse<LocalDateTime>`
+- `GET /api/roles/{code}/created-at` -> `ApiResponse<String>`
+- `GET /api/roles/{code}/updated-at` -> `ApiResponse<String>`
 
 ### POST `/api/roles`
 - 鉴权：需要登录（仅 `admin`）
