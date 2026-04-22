@@ -12,6 +12,7 @@ This module provides registration, login, refresh token, and logout APIs backed 
 ## Documentation
 
 - Full API reference: `docs/api/backend-api-reference.md`
+- Role APIs, including the new single-field retrieval endpoints: `docs/api/backend-api-reference.md` -> `5.2 角色接口`
 - Extended project/help doc: `HELP.md`
 - Smoke test guide: `docs/testing/smoke-api-guide.md`
 
