@@ -100,5 +100,61 @@
         order by period asc
     </select>
 
+    <select id="countCurrentOnlineUsers" resultType="long">
+        select count(distinct rt.user_id)
+        from refresh_tokens rt
+                 inner join users u on u.id = rt.user_id
+        where rt.revoked = 0
+          and rt.expires_at &gt; now()
+          and u.is_active = 1
+    </select>
+
+    <select id="countTotalUsers" resultType="long">
+        select count(1)
+        from users u
+        where u.is_active = 1
+    </select>
+
+    <select id="countPoliceOfficers" resultType="long">
+        select count(1)
+        from users u
+        where u.is_active = 1
+          and u.role = 'police_officer'
+    </select>
+
+    <select id="countTotalCasesAll" resultType="long">
+        select count(1)
+        from cases c
+    </select>
+
+    <select id="countOpenCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.status not in ('EXECUTED', 'ARCHIVED')
+    </select>
+
+    <select id="countClosedCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.status in ('EXECUTED', 'ARCHIVED')
+    </select>
+
+    <select id="countOverdueCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.deadline_time is not null
+          and c.deadline_time &lt; now()
+          and c.status not in ('EXECUTED', 'ARCHIVED')
+    </select>
+
+    <select id="countNearDeadlineCases" resultType="long">
+        select count(1)
+        from cases c
+        where c.deadline_time is not null
+          and c.deadline_time &gt;= now()
+          and c.deadline_time &lt;= #{deadlineBefore}
+          and c.status not in ('EXECUTED', 'ARCHIVED')
+    </select>
+
 </mapper>
 

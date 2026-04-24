@@ -120,5 +120,85 @@ class StatisticsControllerWebMvcTest {
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("Stats query failed"));
     }
+
+    @Test
+    void currentOnlineUsersShouldReturnOk() throws Exception {
+        when(statisticsService.countCurrentOnlineUsers()).thenReturn(5L);
+
+        mockMvc.perform(get("/api/statistics/current-online-users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(5));
+    }
+
+    @Test
+    void totalUsersShouldReturnOk() throws Exception {
+        when(statisticsService.countTotalUsers()).thenReturn(12L);
+
+        mockMvc.perform(get("/api/statistics/total-users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(12));
+    }
+
+    @Test
+    void policeOfficersShouldReturnOk() throws Exception {
+        when(statisticsService.countPoliceOfficers()).thenReturn(9L);
+
+        mockMvc.perform(get("/api/statistics/police-officers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(9));
+    }
+
+    @Test
+    void totalCasesShouldReturnOk() throws Exception {
+        when(statisticsService.countTotalCases()).thenReturn(30L);
+
+        mockMvc.perform(get("/api/statistics/total-cases"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(30));
+    }
+
+    @Test
+    void openCasesShouldReturnOk() throws Exception {
+        when(statisticsService.countOpenCases()).thenReturn(20L);
+
+        mockMvc.perform(get("/api/statistics/open-cases"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(20));
+    }
+
+    @Test
+    void closedCasesShouldReturnOk() throws Exception {
+        when(statisticsService.countClosedCases()).thenReturn(10L);
+
+        mockMvc.perform(get("/api/statistics/closed-cases"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(10));
+    }
+
+    @Test
+    void overdueCasesShouldReturnOk() throws Exception {
+        when(statisticsService.countOverdueCases()).thenReturn(3L);
+
+        mockMvc.perform(get("/api/statistics/overdue-cases"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(3));
+    }
+
+    @Test
+    void nearDeadlineCasesShouldReturnOk() throws Exception {
+        when(statisticsService.countNearDeadlineCases(any())).thenReturn(4L);
+
+        mockMvc.perform(get("/api/statistics/near-deadline-cases").param("withinDays", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(4));
+    }
 }
 

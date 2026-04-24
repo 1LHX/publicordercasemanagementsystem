@@ -35,5 +35,21 @@ public interface StatisticsMapper {
 
     List<ReviewPassRateItem> findReviewPassRate(@Param("startTime") LocalDateTime startTime,
                                                 @Param("endTime") LocalDateTime endTime);
+
+    long countCurrentOnlineUsers();
+
+    long countTotalUsers();
+
+    long countPoliceOfficers();
+
+    long countTotalCasesAll();
+
+    long countOpenCases();
+
+    long countClosedCases();
+
+    long countOverdueCases();
+
+    long countNearDeadlineCases(@Param("deadlineBefore") LocalDateTime deadlineBefore);
 }
 

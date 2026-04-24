@@ -15,6 +15,7 @@ import java.util.List;
 public class StatisticsServiceImpl implements StatisticsService {
 
     private static final int DEFAULT_TOP_N = 10;
+    private static final int DEFAULT_WARNING_DAYS = 3;
 
     private final StatisticsMapper statisticsMapper;
 
@@ -56,6 +57,47 @@ public class StatisticsServiceImpl implements StatisticsService {
     public List<ReviewPassRateItem> getReviewPassRate(LocalDateTime startTime,
                                                       LocalDateTime endTime) {
         return statisticsMapper.findReviewPassRate(startTime, endTime);
+    }
+
+    @Override
+    public long countCurrentOnlineUsers() {
+        return statisticsMapper.countCurrentOnlineUsers();
+    }
+
+    @Override
+    public long countTotalUsers() {
+        return statisticsMapper.countTotalUsers();
+    }
+
+    @Override
+    public long countPoliceOfficers() {
+        return statisticsMapper.countPoliceOfficers();
+    }
+
+    @Override
+    public long countTotalCases() {
+        return statisticsMapper.countTotalCasesAll();
+    }
+
+    @Override
+    public long countOpenCases() {
+        return statisticsMapper.countOpenCases();
+    }
+
+    @Override
+    public long countClosedCases() {
+        return statisticsMapper.countClosedCases();
+    }
+
+    @Override
+    public long countOverdueCases() {
+        return statisticsMapper.countOverdueCases();
+    }
+
+    @Override
+    public long countNearDeadlineCases(Integer withinDays) {
+        int safeDays = withinDays == null || withinDays < 1 ? DEFAULT_WARNING_DAYS : withinDays;
+        return statisticsMapper.countNearDeadlineCases(LocalDateTime.now().plusDays(safeDays));
     }
 }
 

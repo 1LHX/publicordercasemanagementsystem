@@ -393,6 +393,25 @@ Authorization: Bearer <access_token>
   - `GET /api/statistics/region-hotspots`
   - `GET /api/statistics/officer-efficiency`
   - `GET /api/statistics/review-pass-rate`
+  - `GET /api/statistics/current-online-users`
+  - `GET /api/statistics/total-users`
+  - `GET /api/statistics/police-officers`
+  - `GET /api/statistics/total-cases`
+  - `GET /api/statistics/open-cases`
+  - `GET /api/statistics/closed-cases`
+  - `GET /api/statistics/overdue-cases`
+  - `GET /api/statistics/near-deadline-cases?withinDays=3`
+
+### 工作台专用计数接口
+
+- 以上 8 个接口均返回 `ApiResponse<Long>`。
+- 口径约定：
+  - 在线人数：`refresh_tokens` 中未撤销且未过期的去重用户数。
+  - 系统总人数：`users.is_active = 1` 的人数。
+  - 民警数：`users.role = police_officer` 且 `is_active = 1`。
+  - 已结案：状态为 `EXECUTED` 或 `ARCHIVED`。
+  - 未结案：状态不在 `EXECUTED`、`ARCHIVED`。
+  - 超期/临期：仅统计未结案且存在 `deadline_time` 的案件；临期默认 `withinDays = 3`。
 
 ---
 

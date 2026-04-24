@@ -24,5 +24,21 @@ public interface StatisticsService {
 
     List<ReviewPassRateItem> getReviewPassRate(LocalDateTime startTime,
                                                LocalDateTime endTime);
+
+    long countCurrentOnlineUsers();
+
+    long countTotalUsers();
+
+    long countPoliceOfficers();
+
+    long countTotalCases();
+
+    long countOpenCases();
+
+    long countClosedCases();
+
+    long countOverdueCases();
+
+    long countNearDeadlineCases(Integer withinDays);
 }
 

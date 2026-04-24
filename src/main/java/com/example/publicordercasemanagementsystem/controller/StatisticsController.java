@@ -57,5 +57,46 @@ public class StatisticsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         return ResponseEntity.ok(ApiResponse.ok(statisticsService.getReviewPassRate(startTime, endTime)));
     }
+
+    @GetMapping("/current-online-users")
+    public ResponseEntity<ApiResponse<Long>> currentOnlineUsers() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countCurrentOnlineUsers()));
+    }
+
+    @GetMapping("/total-users")
+    public ResponseEntity<ApiResponse<Long>> totalUsers() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countTotalUsers()));
+    }
+
+    @GetMapping("/police-officers")
+    public ResponseEntity<ApiResponse<Long>> policeOfficers() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countPoliceOfficers()));
+    }
+
+    @GetMapping("/total-cases")
+    public ResponseEntity<ApiResponse<Long>> totalCases() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countTotalCases()));
+    }
+
+    @GetMapping("/open-cases")
+    public ResponseEntity<ApiResponse<Long>> openCases() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countOpenCases()));
+    }
+
+    @GetMapping("/closed-cases")
+    public ResponseEntity<ApiResponse<Long>> closedCases() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countClosedCases()));
+    }
+
+    @GetMapping("/overdue-cases")
+    public ResponseEntity<ApiResponse<Long>> overdueCases() {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countOverdueCases()));
+    }
+
+    @GetMapping("/near-deadline-cases")
+    public ResponseEntity<ApiResponse<Long>> nearDeadlineCases(
+            @RequestParam(required = false) Integer withinDays) {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.countNearDeadlineCases(withinDays)));
+    }
 }
 
