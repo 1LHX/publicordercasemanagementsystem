@@ -290,7 +290,7 @@ Authorization: Bearer <access_token>
 - 成功提示：`Case dossier exported`
 
 ### PUT `/api/cases/{id}`
-- 鉴权：需要登录
+- 鉴权：需要登录（权限基于案件状态和用户角色：REGISTERED状态仅创建者可修改，ACCEPTED/INVESTIGATING状态仅受理民警可修改）
 - 路径参数：`id`
 - 请求体（`UpdateCaseRequest`）：`title`、`typeCode`、`departmentId` 必填，其余可选
 - 响应：`ApiResponse<CaseDetailResponse>`
@@ -318,7 +318,7 @@ Authorization: Bearer <access_token>
 - 说明：已接入标准审批链（`ACCEPTANCE_REVIEW`）。
 
 ### POST `/api/cases/{id}/assign`
-- 鉴权：需要登录
+- 鉴权：需要登录（仅supervisor或admin角色可调用）
 - 路径参数：`id`
 - 请求体（`AssignCaseRequest`）：`handlingOfficerId` 必填
 - 响应：`ApiResponse<CaseDetailResponse>`

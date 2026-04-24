@@ -108,6 +108,7 @@ public class CaseServiceImpl implements CaseService {
         record.setIsOverdue(false);
         record.setCreatedAt(LocalDateTime.now());
         record.setUpdatedAt(LocalDateTime.now());
+        record.setCreatorId(operatorUserId);
         caseMapper.insertCase(record);
 
         addProcess(record.getId(), null, STATUS_REGISTERED, operatorUserId, "Case created", httpRequest);
@@ -211,8 +212,20 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public CaseDetailResponse updateCase(Long id, UpdateCaseRequest request) {
+    public CaseDetailResponse updateCase(Long id, UpdateCaseRequest request, Long operatorUserId) {
         CaseRecord existing = requireCase(id);
+        User currentUser = requireOperator(operatorUserId);
+        if (STATUS_REGISTERED.equals(existing.getStatus())) {
+            if (!Objects.equals(existing.getCreatorId(), currentUser.getId())) {
+                throw new AuthException(403, "Only the creator can modify the case before acceptance");
+            }
+        } else if (STATUS_ACCEPTED.equals(existing.getStatus()) || STATUS_INVESTIGATING.equals(existing.getStatus())) {
+            if (!Objects.equals(existing.getHandlingOfficerId(), currentUser.getId())) {
+                throw new AuthException(403, "Only the assigned handling officer can modify the case after acceptance");
+            }
+        } else {
+            throw new AuthException(403, "Case modification not allowed in current status");
+        }
         existing.setTitle(request.getTitle());
         existing.setTypeCode(request.getTypeCode());
         existing.setReporterName(request.getReporterName());
@@ -287,6 +300,10 @@ public class CaseServiceImpl implements CaseService {
     @Override
     public CaseDetailResponse assignCase(Long id, AssignCaseRequest request, Long operatorUserId, HttpServletRequest httpRequest) {
         CaseRecord record = requireCase(id);
+        User currentUser = requireOperator(operatorUserId);
+        if (!ROLE_SUPERVISOR.equals(currentUser.getRole()) && !ROLE_ADMIN.equals(currentUser.getRole())) {
+            throw new AuthException(403, "Only supervisors can reassign handling officers");
+        }
         User officer = userMapper.findById(request.getHandlingOfficerId());
         if (officer == null || !Boolean.TRUE.equals(officer.getIsActive())) {
             throw new AuthException(400, "Handling officer not found or inactive");

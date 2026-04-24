@@ -45,7 +45,7 @@ public interface CaseService {
 
     CaseExportResponse exportCase(Long id);
 
-    CaseDetailResponse updateCase(Long id, UpdateCaseRequest request);
+    CaseDetailResponse updateCase(Long id, UpdateCaseRequest request, Long operatorUserId);
 
     void deleteCase(Long id, Long operatorUserId);
 

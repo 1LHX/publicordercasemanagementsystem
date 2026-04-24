@@ -24,6 +24,8 @@ public class CaseRecord {
     private Boolean isOverdue;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long creatorId;
+    private String creatorName;
 
     public Long getId() {
         return id;
@@ -184,5 +186,20 @@ public class CaseRecord {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-}
 
+    public Long getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
+    }
+
+    public String getCreatorName() {
+        return creatorName;
+    }
+
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
+    }
+}

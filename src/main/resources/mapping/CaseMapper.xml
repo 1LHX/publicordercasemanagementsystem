@@ -15,6 +15,8 @@
         <result column="incident_time" property="incidentTime" />
         <result column="incident_location" property="incidentLocation" />
         <result column="brief_description" property="briefDescription" />
+        <result column="creator_id" property="creatorId" />
+        <result column="creator_name" property="creatorName" />
         <result column="handling_officer_id" property="handlingOfficerId" />
         <result column="handling_officer_name" property="handlingOfficerName" />
         <result column="department_id" property="departmentId" />
@@ -65,7 +67,7 @@
     <sql id="CaseSelectColumns">
         c.id, c.case_number, c.title, c.type_code, dct.name as type_name, c.status,
         c.reporter_name, c.reporter_contact, c.incident_time, c.incident_location,
-        c.brief_description, c.handling_officer_id, u.name as handling_officer_name,
+        c.brief_description, c.creator_id, cu.name as creator_name, c.handling_officer_id, u.name as handling_officer_name,
         c.department_id, dep.name as department_name, c.acceptance_time, c.deadline_time,
         c.is_overdue, c.created_at, c.updated_at
     </sql>
@@ -74,12 +76,12 @@
         insert into cases (
             case_number, title, type_code, status,
             reporter_name, reporter_contact, incident_time, incident_location,
-            brief_description, handling_officer_id, department_id,
+            brief_description, creator_id, handling_officer_id, department_id,
             acceptance_time, deadline_time, is_overdue, created_at, updated_at
         ) values (
             #{caseNumber}, #{title}, #{typeCode}, #{status},
             #{reporterName}, #{reporterContact}, #{incidentTime}, #{incidentLocation},
-            #{briefDescription}, #{handlingOfficerId}, #{departmentId},
+            #{briefDescription}, #{creatorId}, #{handlingOfficerId}, #{departmentId},
             #{acceptanceTime}, #{deadlineTime}, #{isOverdue}, #{createdAt}, #{updatedAt}
         )
     </insert>
@@ -101,6 +103,7 @@
         select <include refid="CaseSelectColumns" />
         from cases c
         left join dict_case_types dct on dct.code = c.type_code
+        left join users cu on cu.id = c.creator_id
         left join users u on u.id = c.handling_officer_id
         left join departments dep on dep.id = c.department_id
         where c.id = #{id}
@@ -110,6 +113,7 @@
         select <include refid="CaseSelectColumns" />
         from cases c
         left join dict_case_types dct on dct.code = c.type_code
+        left join users cu on cu.id = c.creator_id
         left join users u on u.id = c.handling_officer_id
         left join departments dep on dep.id = c.department_id
         where c.case_number = #{caseNumber}
@@ -147,6 +151,7 @@
         select <include refid="CaseSelectColumns" />
         from cases c
         left join dict_case_types dct on dct.code = c.type_code
+        left join users cu on cu.id = c.creator_id
         left join users u on u.id = c.handling_officer_id
         left join departments dep on dep.id = c.department_id
         <where>
@@ -189,6 +194,7 @@
         select <include refid="CaseSelectColumns" />
         from cases c
         left join dict_case_types dct on dct.code = c.type_code
+        left join users cu on cu.id = c.creator_id
         left join users u on u.id = c.handling_officer_id
         left join departments dep on dep.id = c.department_id
         where c.deadline_time is not null
@@ -211,6 +217,7 @@
         select <include refid="CaseSelectColumns" />
         from cases c
         left join dict_case_types dct on dct.code = c.type_code
+        left join users cu on cu.id = c.creator_id
         left join users u on u.id = c.handling_officer_id
         left join departments dep on dep.id = c.department_id
         where c.deadline_time is not null

@@ -108,7 +108,7 @@ public class CaseController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CaseDetailResponse>> updateCase(@PathVariable Long id,
                                                                       @Valid @RequestBody UpdateCaseRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(caseService.updateCase(id, request), "Case updated successfully"));
+        return ResponseEntity.ok(ApiResponse.ok(caseService.updateCase(id, request, getCurrentUserId()), "Case updated successfully"));
     }
 
     @DeleteMapping("/{id}")
