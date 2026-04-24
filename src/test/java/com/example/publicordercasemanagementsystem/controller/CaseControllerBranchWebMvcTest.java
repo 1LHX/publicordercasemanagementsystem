@@ -195,6 +195,7 @@ class CaseControllerBranchWebMvcTest {
         when(caseService.updateCase(eq(101L), any(), eq(1L))).thenReturn(buildCaseDetail("UPDATED"));
 
         mockMvc.perform(put("/api/cases/101")
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateCaseRequest()))
                 .andExpect(status().isOk())
@@ -215,6 +216,7 @@ class CaseControllerBranchWebMvcTest {
         when(caseService.updateCase(eq(101L), any(), eq(1L))).thenThrow(new AuthException(409, "Cannot update archived case"));
 
         mockMvc.perform(put("/api/cases/101")
+                        .with(authenticatedUser(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUpdateCaseRequest()))
                 .andExpect(status().isConflict())
