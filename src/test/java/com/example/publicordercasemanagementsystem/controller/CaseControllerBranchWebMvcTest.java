@@ -192,7 +192,7 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void updateCaseShouldReturnOk() throws Exception {
-        when(caseService.updateCase(eq(101L), any())).thenReturn(buildCaseDetail("UPDATED"));
+        when(caseService.updateCase(eq(101L), any(), eq(1L))).thenReturn(buildCaseDetail("UPDATED"));
 
         mockMvc.perform(put("/api/cases/101")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -212,7 +212,7 @@ class CaseControllerBranchWebMvcTest {
 
     @Test
     void updateCaseShouldReturnBusinessError() throws Exception {
-        when(caseService.updateCase(eq(101L), any())).thenThrow(new AuthException(409, "Cannot update archived case"));
+        when(caseService.updateCase(eq(101L), any(), eq(1L))).thenThrow(new AuthException(409, "Cannot update archived case"));
 
         mockMvc.perform(put("/api/cases/101")
                         .contentType(MediaType.APPLICATION_JSON)
