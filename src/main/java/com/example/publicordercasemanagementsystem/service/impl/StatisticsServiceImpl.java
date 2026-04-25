@@ -4,6 +4,7 @@ import com.example.publicordercasemanagementsystem.dto.CasesOverviewResponse;
 import com.example.publicordercasemanagementsystem.dto.OfficerEfficiencyItem;
 import com.example.publicordercasemanagementsystem.dto.RegionHotspotItem;
 import com.example.publicordercasemanagementsystem.dto.ReviewPassRateItem;
+import com.example.publicordercasemanagementsystem.dto.TimeCountItem;
 import com.example.publicordercasemanagementsystem.mapper.StatisticsMapper;
 import com.example.publicordercasemanagementsystem.service.StatisticsService;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,14 @@ public class StatisticsServiceImpl implements StatisticsService {
     public List<ReviewPassRateItem> getReviewPassRate(LocalDateTime startTime,
                                                       LocalDateTime endTime) {
         return statisticsMapper.findReviewPassRate(startTime, endTime);
+    }
+
+    @Override
+    public List<TimeCountItem> getAcceptedCasesTrend(LocalDateTime startTime,
+                                                     LocalDateTime endTime,
+                                                     String granularity) {
+        String periodFormat = "MONTH".equalsIgnoreCase(granularity) ? "%Y-%m" : "%Y-%m-%d";
+        return statisticsMapper.countAcceptedCasesByPeriod(startTime, endTime, periodFormat);
     }
 
     @Override

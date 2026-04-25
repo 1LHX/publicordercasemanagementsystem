@@ -5,6 +5,7 @@ import com.example.publicordercasemanagementsystem.dto.CasesOverviewResponse;
 import com.example.publicordercasemanagementsystem.dto.OfficerEfficiencyItem;
 import com.example.publicordercasemanagementsystem.dto.RegionHotspotItem;
 import com.example.publicordercasemanagementsystem.dto.ReviewPassRateItem;
+import com.example.publicordercasemanagementsystem.dto.TimeCountItem;
 import com.example.publicordercasemanagementsystem.service.StatisticsService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,14 @@ public class StatisticsController {
             @RequestParam(required = false, defaultValue = "DAY") String granularity) {
         CasesOverviewResponse response = statisticsService.getCasesOverview(startTime, endTime, granularity);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/accepted-cases-trend")
+    public ResponseEntity<ApiResponse<List<TimeCountItem>>> acceptedCasesTrend(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @RequestParam(required = false, defaultValue = "DAY") String granularity) {
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.getAcceptedCasesTrend(startTime, endTime, granularity)));
     }
 
     @GetMapping("/region-hotspots")

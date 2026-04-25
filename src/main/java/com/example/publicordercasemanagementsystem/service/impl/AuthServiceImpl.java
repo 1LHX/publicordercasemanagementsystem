@@ -136,6 +136,8 @@ public class AuthServiceImpl implements AuthService {
         if (affected <= 0) {
             throw new AuthException(401, "Invalid token");
         }
+        // Clear all active sessions for the user so dashboard online count updates immediately.
+        refreshTokenMapper.revokeByUserId(userId);
     }
 
     @Override

@@ -81,7 +81,7 @@ Authorization: Bearer <access_token>
   - `refreshToken`（字符串，必填）
 - 响应：`ApiResponse<Void>`
 - 成功提示：`Logout successful`
-- 行为：仅撤销当前 `refreshToken`（会话级退出），不会自动撤销该用户其他会话。
+- 行为：先校验 `refreshToken` 属于当前 `Authorization` 用户，再撤销该用户全部 `refreshToken`（账号级退出）。
 
 ### POST `/api/auth/register`
 - 鉴权：无需登录
@@ -390,6 +390,7 @@ Authorization: Bearer <access_token>
 - 均需登录鉴权。
 - 包含：
   - `GET /api/statistics/cases-overview`
+  - `GET /api/statistics/accepted-cases-trend`
   - `GET /api/statistics/region-hotspots`
   - `GET /api/statistics/officer-efficiency`
   - `GET /api/statistics/review-pass-rate`
@@ -412,6 +413,16 @@ Authorization: Bearer <access_token>
   - 已结案：状态为 `EXECUTED` 或 `ARCHIVED`。
   - 未结案：状态不在 `EXECUTED`、`ARCHIVED`。
   - 超期/临期：仅统计未结案且存在 `deadline_time` 的案件；临期默认 `withinDays = 3`。
+
+### GET `/api/statistics/accepted-cases-trend`
+- 鉴权：需要登录
+- 查询参数（全部可选）：
+  - `startTime`（ISO 日期时间）
+  - `endTime`（ISO 日期时间）
+  - `granularity`（`DAY` / `MONTH`，默认 `DAY`）
+- 响应：`ApiResponse<List<TimeCountItem>>`
+- 口径：按 `cases.acceptance_time` 分组统计受理案件数量；`DAY` 按日，`MONTH` 按月。
+- 说明：仅统计 `acceptance_time is not null` 的案件。
 
 ---
 

@@ -25,6 +25,10 @@ public interface StatisticsMapper {
                                            @Param("endTime") LocalDateTime endTime,
                                            @Param("periodFormat") String periodFormat);
 
+    List<TimeCountItem> countAcceptedCasesByPeriod(@Param("startTime") LocalDateTime startTime,
+                                                   @Param("endTime") LocalDateTime endTime,
+                                                   @Param("periodFormat") String periodFormat);
+
     List<RegionHotspotItem> findRegionHotspots(@Param("startTime") LocalDateTime startTime,
                                                @Param("endTime") LocalDateTime endTime,
                                                @Param("topN") int topN);

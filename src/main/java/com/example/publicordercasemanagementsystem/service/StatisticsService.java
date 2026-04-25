@@ -4,6 +4,7 @@ import com.example.publicordercasemanagementsystem.dto.CasesOverviewResponse;
 import com.example.publicordercasemanagementsystem.dto.OfficerEfficiencyItem;
 import com.example.publicordercasemanagementsystem.dto.RegionHotspotItem;
 import com.example.publicordercasemanagementsystem.dto.ReviewPassRateItem;
+import com.example.publicordercasemanagementsystem.dto.TimeCountItem;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +25,10 @@ public interface StatisticsService {
 
     List<ReviewPassRateItem> getReviewPassRate(LocalDateTime startTime,
                                                LocalDateTime endTime);
+
+    List<TimeCountItem> getAcceptedCasesTrend(LocalDateTime startTime,
+                                              LocalDateTime endTime,
+                                              String granularity);
 
     long countCurrentOnlineUsers();
 

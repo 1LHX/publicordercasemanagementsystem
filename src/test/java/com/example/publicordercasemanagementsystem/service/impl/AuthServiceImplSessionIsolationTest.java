@@ -101,7 +101,7 @@ class AuthServiceImplSessionIsolationTest {
     }
 
     @Test
-    void logoutShouldRevokeOnlyCurrentSessionToken() {
+    void logoutShouldRevokeAllTokensForCurrentUserAfterOwnershipCheck() {
         LogoutRequest request = new LogoutRequest();
         request.setRefreshToken("refresh-3");
         String tokenHash = CryptoUtil.sha256Hex("refresh-3");
@@ -113,7 +113,7 @@ class AuthServiceImplSessionIsolationTest {
         authService.logout(request, "Bearer access-3");
 
         verify(refreshTokenMapper).revokeByHashAndUserId(eq(tokenHash), eq(3L));
-        verify(refreshTokenMapper, never()).revokeByUserId(any());
+        verify(refreshTokenMapper).revokeByUserId(3L);
     }
 
     @Test

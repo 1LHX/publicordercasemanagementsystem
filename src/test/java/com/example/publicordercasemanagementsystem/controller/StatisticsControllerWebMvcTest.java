@@ -4,6 +4,7 @@ import com.example.publicordercasemanagementsystem.dto.CasesOverviewResponse;
 import com.example.publicordercasemanagementsystem.exception.ApiExceptionHandler;
 import com.example.publicordercasemanagementsystem.exception.AuthException;
 import com.example.publicordercasemanagementsystem.service.StatisticsService;
+import com.example.publicordercasemanagementsystem.dto.TimeCountItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -119,6 +120,20 @@ class StatisticsControllerWebMvcTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("Stats query failed"));
+    }
+
+    @Test
+    void acceptedCasesTrendShouldReturnOk() throws Exception {
+        TimeCountItem item = new TimeCountItem();
+        item.setPeriod("2026-04-01");
+        item.setCount(6L);
+        when(statisticsService.getAcceptedCasesTrend(any(), any(), anyString())).thenReturn(List.of(item));
+
+        mockMvc.perform(get("/api/statistics/accepted-cases-trend").param("granularity", "DAY"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].period").value("2026-04-01"))
+                .andExpect(jsonPath("$.data[0].count").value(6));
     }
 
     @Test
