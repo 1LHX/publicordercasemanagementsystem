@@ -123,13 +123,13 @@ class StatisticsControllerWebMvcTest {
     }
 
     @Test
-    void acceptedCasesTrendShouldReturnOk() throws Exception {
+    void createdCasesTrendShouldReturnOk() throws Exception {
         TimeCountItem item = new TimeCountItem();
         item.setPeriod("2026-04-01");
         item.setCount(6L);
-        when(statisticsService.getAcceptedCasesTrend(any(), any(), anyString())).thenReturn(List.of(item));
+        when(statisticsService.getCreatedCasesTrend(any(), any(), anyString())).thenReturn(List.of(item));
 
-        mockMvc.perform(get("/api/statistics/accepted-cases-trend").param("granularity", "DAY"))
+        mockMvc.perform(get("/api/statistics/created-cases-trend").param("granularity", "DAY"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].period").value("2026-04-01"))

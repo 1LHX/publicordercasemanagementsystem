@@ -61,11 +61,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     @Override
-    public List<TimeCountItem> getAcceptedCasesTrend(LocalDateTime startTime,
-                                                     LocalDateTime endTime,
-                                                     String granularity) {
+    public List<TimeCountItem> getCreatedCasesTrend(LocalDateTime startTime,
+                                                    LocalDateTime endTime,
+                                                    String granularity) {
         String periodFormat = "MONTH".equalsIgnoreCase(granularity) ? "%Y-%m" : "%Y-%m-%d";
-        return statisticsMapper.countAcceptedCasesByPeriod(startTime, endTime, periodFormat);
+        return statisticsMapper.countCasesByPeriod(startTime, endTime, periodFormat);
     }
 
     @Override

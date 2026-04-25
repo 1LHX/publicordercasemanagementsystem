@@ -26,9 +26,9 @@ public interface StatisticsService {
     List<ReviewPassRateItem> getReviewPassRate(LocalDateTime startTime,
                                                LocalDateTime endTime);
 
-    List<TimeCountItem> getAcceptedCasesTrend(LocalDateTime startTime,
-                                              LocalDateTime endTime,
-                                              String granularity);
+    List<TimeCountItem> getCreatedCasesTrend(LocalDateTime startTime,
+                                             LocalDateTime endTime,
+                                             String granularity);
 
     long countCurrentOnlineUsers();
 

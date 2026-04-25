@@ -12,15 +12,6 @@
         </if>
     </sql>
 
-    <sql id="AcceptanceTimeRangeWhere">
-        <if test="startTime != null">
-            and c.acceptance_time &gt;= #{startTime}
-        </if>
-        <if test="endTime != null">
-            and c.acceptance_time &lt;= #{endTime}
-        </if>
-    </sql>
-
     <select id="countCasesTotal" resultType="long">
         select count(1)
         from cases c
@@ -57,17 +48,6 @@
             <include refid="CaseTimeRangeWhere" />
         </where>
         group by date_format(c.created_at, #{periodFormat})
-        order by period asc
-    </select>
-
-    <select id="countAcceptedCasesByPeriod" resultType="com.example.publicordercasemanagementsystem.dto.TimeCountItem">
-        select date_format(c.acceptance_time, #{periodFormat}) as period, count(1) as `count`
-        from cases c
-        <where>
-            <include refid="AcceptanceTimeRangeWhere" />
-            and c.acceptance_time is not null
-        </where>
-        group by date_format(c.acceptance_time, #{periodFormat})
         order by period asc
     </select>
 

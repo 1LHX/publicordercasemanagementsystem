@@ -390,7 +390,7 @@ Authorization: Bearer <access_token>
 - 均需登录鉴权。
 - 包含：
   - `GET /api/statistics/cases-overview`
-  - `GET /api/statistics/accepted-cases-trend`
+   - `GET /api/statistics/created-cases-trend`
   - `GET /api/statistics/region-hotspots`
   - `GET /api/statistics/officer-efficiency`
   - `GET /api/statistics/review-pass-rate`
@@ -414,15 +414,15 @@ Authorization: Bearer <access_token>
   - 未结案：状态不在 `EXECUTED`、`ARCHIVED`。
   - 超期/临期：仅统计未结案且存在 `deadline_time` 的案件；临期默认 `withinDays = 3`。
 
-### GET `/api/statistics/accepted-cases-trend`
+### GET `/api/statistics/created-cases-trend`
 - 鉴权：需要登录
 - 查询参数（全部可选）：
   - `startTime`（ISO 日期时间）
   - `endTime`（ISO 日期时间）
   - `granularity`（`DAY` / `MONTH`，默认 `DAY`）
 - 响应：`ApiResponse<List<TimeCountItem>>`
-- 口径：按 `cases.acceptance_time` 分组统计受理案件数量；`DAY` 按日，`MONTH` 按月。
-- 说明：仅统计 `acceptance_time is not null` 的案件。
+- 口径：按 `cases.created_at` 分组统计已建立案件数量；`DAY` 按日，`MONTH` 按月。
+- 说明：统计范围与 `cases-overview` 的 `byPeriod` 一致。
 
 ---
 

@@ -36,12 +36,12 @@ public class StatisticsController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
-    @GetMapping("/accepted-cases-trend")
-    public ResponseEntity<ApiResponse<List<TimeCountItem>>> acceptedCasesTrend(
+    @GetMapping("/created-cases-trend")
+    public ResponseEntity<ApiResponse<List<TimeCountItem>>> createdCasesTrend(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
             @RequestParam(required = false, defaultValue = "DAY") String granularity) {
-        return ResponseEntity.ok(ApiResponse.ok(statisticsService.getAcceptedCasesTrend(startTime, endTime, granularity)));
+        return ResponseEntity.ok(ApiResponse.ok(statisticsService.getCreatedCasesTrend(startTime, endTime, granularity)));
     }
 
     @GetMapping("/region-hotspots")
