@@ -440,6 +440,55 @@ Authorization: Bearer <access_token>
 - 包含：
   - `POST /api/dashscope/chat`
   - `POST /api/dashscope/prompt`
+  - `POST /api/dashscope/generate-case-document`（新增）
+
+### POST `/api/dashscope/generate-case-document`
+- 鉴权：无需登录（公开接口）
+- 请求体（`CaseDocumentRequest`）：
+  - `caseId`（数字，必填）：案件ID
+  - `model`（字符串，可选）：AI模型，默认使用系统配置（如`qwen-plus`）
+  - `documentType`（字符串，可选）：文书类型，如`"DECISION"`（决定书）、`"NOTICE"`（通知书）、`"REPORT"`（报告），默认`"处理"`
+- 响应：`ApiResponse<ChatCompletionResponse>`
+- 成功提示：`Case document generated successfully`
+- 说明：接口自动从数据库读取指定案件的详细信息（包括案件编号、标题、类型、状态、报告人、处理人员、部门、描述等），并调用AI生成符合中国行政公文格式的文书。文书内容基于系统数据库数据类型，确保格式包括标题、文号、发文机关、发文日期、正文和落款。
+- 示例请求：
+  ```json
+  {
+    "caseId": 123,
+    "documentType": "DECISION"
+  }
+  ```
+- 示例响应：
+  ```json
+  {
+    "code": 200,
+    "message": "Case document generated successfully",
+    "data": {
+      "id": "chatcmpl-xxx",
+      "object": "chat.completion",
+      "created": 1677652288,
+      "model": "qwen-plus",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "【标题】\n公安机关处理决定书\n\n【文号】\n[公安机关代字] [年份] [编号]号\n\n【发文机关】\nXX市公安局\n\n【发文日期】\n2026年04月26日\n\n【正文】\n根据案件编号：CASE-001，标题：扰乱公共秩序事件，类型：PUBLIC_DISTURBANCE，状态：INVESTIGATING，报告人：张三，发生时间：2026-04-20 10:00:00，地点：XX街道，描述：当事人扰乱公共秩序，经调查属实。现决定如下：...\n\n【落款】\nXX市公安局\n2026年04月26日\n（印章）"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 150,
+        "completion_tokens": 250,
+        "total_tokens": 400
+      }
+    }
+  }
+  ```
+- 错误处理：
+  - 如果`caseId`不存在，返回`404`："Case not found"
+  - 其他错误遵循全局异常处理（如`500`服务器错误）
 
 ---
 

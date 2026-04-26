@@ -24,6 +24,7 @@ public class CaseDetailResponse {
     private Boolean isOverdue;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String creatorName; // 新增 creatorName 字段
 
     public Long getId() {
         return id;
@@ -184,5 +185,12 @@ public class CaseDetailResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-}
 
+    public String getCreatorName() {
+        return creatorName;
+    }
+
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
+    }
+}
