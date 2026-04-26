@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.CaseProcessMapper">
+
+    <resultMap id="CaseProcessResult" type="com.example.publicordercasemanagementsystem.pojo.CaseProcess">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="from_status" property="fromStatus" />
+        <result column="to_status" property="toStatus" />
+        <result column="operator_id" property="operatorId" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operation_time" property="operationTime" />
+        <result column="comment" property="comment" />
+        <result column="ip_address" property="ipAddress" />
+    </resultMap>
+
+    <select id="findByCaseId" resultMap="CaseProcessResult">
+        select cp.id, cp.case_id, cp.from_status, cp.to_status, cp.operator_id,
+               u.name as operator_name, cp.operation_time, cp.comment, cp.ip_address
+        from case_processes cp
+        left join users u on u.id = cp.operator_id
+        where cp.case_id = #{caseId}
+        order by cp.operation_time desc
+    </select>
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.publicordercasemanagementsystem.mapper.CaseEvidenceMapper">
+
+    <resultMap id="CaseEvidenceResult" type="com.example.publicordercasemanagementsystem.pojo.CaseEvidence">
+        <id column="id" property="id" />
+        <result column="case_id" property="caseId" />
+        <result column="file_name" property="fileName" />
+        <result column="file_path" property="filePath" />
+        <result column="file_type" property="fileType" />
+        <result column="file_size" property="fileSize" />
+        <result column="upload_user_id" property="uploadUserId" />
+        <result column="upload_user_name" property="uploadUserName" />
+        <result column="description" property="description" />
+        <result column="uploaded_at" property="uploadedAt" />
+    </resultMap>
+
+    <select id="findByCaseId" resultMap="CaseEvidenceResult">
+        select ce.id, ce.case_id, ce.file_name, ce.file_path, ce.file_type, ce.file_size,
+               ce.upload_user_id, u.name as upload_user_name, ce.description, ce.uploaded_at
+        from case_evidences ce
+        left join users u on u.id = ce.upload_user_id
+        where ce.case_id = #{caseId}
+        order by ce.uploaded_at desc
+    </select>
+</mapper>

@@ -5,7 +5,12 @@ import com.example.publicordercasemanagementsystem.dto.ChatCompletionResponse;
 import com.example.publicordercasemanagementsystem.dto.ChatMessage;
 import com.example.publicordercasemanagementsystem.dto.PromptRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDocumentRequest;
+import com.example.publicordercasemanagementsystem.dto.CaseDocumentPlainRequest;
 import com.example.publicordercasemanagementsystem.dto.CaseDetailResponse;
+import com.example.publicordercasemanagementsystem.mapper.CaseEvidenceMapper;
+import com.example.publicordercasemanagementsystem.mapper.CaseProcessMapper;
+import com.example.publicordercasemanagementsystem.pojo.CaseEvidence;
+import com.example.publicordercasemanagementsystem.pojo.CaseProcess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,10 +24,14 @@ public class DashScopeService {
 
     private final WebClient webClient;
     private final CaseService caseService;
+    private final CaseEvidenceMapper caseEvidenceMapper;
+    private final CaseProcessMapper caseProcessMapper;
 
-    public DashScopeService(@Qualifier("dashScopeWebClient") WebClient webClient, CaseService caseService) {
+    public DashScopeService(@Qualifier("dashScopeWebClient") WebClient webClient, CaseService caseService, CaseEvidenceMapper caseEvidenceMapper, CaseProcessMapper caseProcessMapper) {
         this.webClient = webClient;
         this.caseService = caseService;
+        this.caseEvidenceMapper = caseEvidenceMapper;
+        this.caseProcessMapper = caseProcessMapper;
     }
 
     public ChatCompletionResponse chat(ChatCompletionRequest request) {
@@ -128,5 +137,54 @@ public class DashScopeService {
         chatRequest.setMessages(messages);
 
         return chat(chatRequest);
+    }
+
+    public String generateCaseDocumentPlain(CaseDocumentPlainRequest request) {
+        // 获取案件详情
+        CaseDetailResponse caseDetail = caseService.getCaseById(request.getCaseId());
+
+        // 查询证据
+        List<CaseEvidence> evidences = caseEvidenceMapper.findByCaseId(request.getCaseId());
+
+        // 查询流程
+        List<CaseProcess> processes = caseProcessMapper.findByCaseId(request.getCaseId());
+
+        // 纯拼接文书内容
+        StringBuilder document = new StringBuilder();
+        document.append("案件文书\n\n");
+        document.append("案件编号: ").append(caseDetail.getCaseNumber()).append("\n");
+        document.append("案件标题: ").append(caseDetail.getTitle()).append("\n");
+        document.append("案件建立时间: ").append(caseDetail.getCreatedAt()).append("\n");
+        document.append("案件建立人: ").append(caseDetail.getCreatorName() != null ? caseDetail.getCreatorName() : "未知").append("\n");
+        document.append("案件当前受理人: ").append(caseDetail.getHandlingOfficerName() != null ? caseDetail.getHandlingOfficerName() : "未分配").append("\n");
+        document.append("当前案件状态: ").append(caseDetail.getStatus()).append("\n\n");
+
+        // 案件证据
+        document.append("案件证据:\n");
+        if (evidences.isEmpty()) {
+            document.append("无证据\n");
+        } else {
+            for (CaseEvidence evidence : evidences) {
+                document.append("- 文件名: ").append(evidence.getFileName()).append("\n");
+                document.append("  描述: ").append(evidence.getDescription() != null ? evidence.getDescription() : "无").append("\n");
+                document.append("  上传者: ").append(evidence.getUploadUserName() != null ? evidence.getUploadUserName() : "未知").append("\n");
+                document.append("  上传时间: ").append(evidence.getUploadedAt()).append("\n\n");
+            }
+        }
+
+        // 案件流程时间线
+        document.append("案件流程时间线:\n");
+        if (processes.isEmpty()) {
+            document.append("无流程记录\n");
+        } else {
+            for (CaseProcess process : processes) {
+                document.append("- ").append(process.getOperationTime()).append(": ");
+                document.append("从 ").append(process.getFromStatus() != null ? process.getFromStatus() : "初始").append(" 变更到 ").append(process.getToStatus()).append("\n");
+                document.append("  操作者: ").append(process.getOperatorName() != null ? process.getOperatorName() : "未知").append("\n");
+                document.append("  备注: ").append(process.getComment() != null ? process.getComment() : "无").append("\n\n");
+            }
+        }
+
+        return document.toString();
     }
 }

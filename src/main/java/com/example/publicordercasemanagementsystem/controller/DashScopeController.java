@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.publicordercasemanagementsystem.dto.CaseDocumentRequest;
+import com.example.publicordercasemanagementsystem.dto.CaseDocumentPlainRequest;
 
 @RestController
 @RequestMapping("/api/dashscope")
@@ -36,5 +37,10 @@ public class DashScopeController {
     @PostMapping("/generate-case-document")
     public ResponseEntity<ApiResponse<ChatCompletionResponse>> generateCaseDocument(@Valid @RequestBody CaseDocumentRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(dashScopeService.generateCaseDocument(request), "Case document generated successfully"));
+    }
+
+    @PostMapping("/generate-case-document-plain")
+    public ResponseEntity<ApiResponse<String>> generateCaseDocumentPlain(@Valid @RequestBody CaseDocumentPlainRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(dashScopeService.generateCaseDocumentPlain(request), "Case document generated successfully"));
     }
 }
