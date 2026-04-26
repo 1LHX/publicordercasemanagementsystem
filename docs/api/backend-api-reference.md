@@ -440,7 +440,8 @@ Authorization: Bearer <access_token>
 - 包含：
   - `POST /api/dashscope/chat`
   - `POST /api/dashscope/prompt`
-  - `POST /api/dashscope/generate-case-document`（新增）
+  - `POST /api/dashscope/generate-case-document`（AI生成）
+  - `POST /api/dashscope/generate-case-document-plain`（纯拼接）
 
 ### POST `/api/dashscope/generate-case-document`
 - 鉴权：无需登录（公开接口）
@@ -484,6 +485,31 @@ Authorization: Bearer <access_token>
         "total_tokens": 400
       }
     }
+  }
+  ```
+- 错误处理：
+  - 如果`caseId`不存在，返回`404`："Case not found"
+  - 其他错误遵循全局异常处理（如`500`服务器错误）
+
+### POST `/api/dashscope/generate-case-document-plain`
+- 鉴权：无需登录（公开接口）
+- 请求体（`CaseDocumentPlainRequest`）：
+  - `caseId`（数字，必填）：案件ID
+- 响应：`ApiResponse<String>`
+- 成功提示：`Case document generated successfully`
+- 说明：接口自动从数据库读取指定案件的基本信息、证据和流程时间线，纯文本拼接生成文书。不使用AI，直接返回拼接字符串。
+- 示例请求：
+  ```json
+  {
+    "caseId": 123
+  }
+  ```
+- 示例响应：
+  ```json
+  {
+    "code": 200,
+    "message": "Case document generated successfully",
+    "data": "案件文书\n\n案件编号: CASE-001\n案件标题: 扰乱公共秩序事件\n案件建立时间: 2026-04-20T10:00:00\n案件建立人: 张三\n案件当前受理人: 李四\n当前案件状态: INVESTIGATING\n\n案件证据:\n- 文件名: evidence1.jpg\n  描述: 现场照片\n  上传者: 王五\n  上传时间: 2026-04-21T12:00:00\n\n案件流程时间线:\n- 2026-04-20T10:00:00: 从 初始 变更到 REGISTERED\n  操作者: 张三\n  备注: 案件登记\n\n- 2026-04-21T11:00:00: 从 REGISTERED 变更到 ACCEPTED\n  操作者: 李四\n  备注: 接受案件"
   }
   ```
 - 错误处理：
